@@ -5,6 +5,8 @@ pragma solidity ^0.8.17;
 // import "../lib/chainlink/contracts/src/v0.8/interfaces/OracleInterface.sol";
 // import "../lib/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
+/// @title PoolContract for automated portfolio management
+/// @notice This contract manages a pool of tokens with automated rebalancing, take-profit, and stop-loss features
 contract PoolContract {
     address public owner;
     address[] public tokens;
@@ -14,32 +16,34 @@ contract PoolContract {
     uint256[] public stopLoss;
     uint256 public timePeriod;
 
-    // ISwapRouter public swapRouter; // Swap router instance
-    uint256 public lastChecked; // Last time the conditions were checked
+    // ISwapRouter public swapRouter;
+    uint256 public lastChecked;
 
-    // Modifier to restrict access to the pool owner
+    /// @notice Restricts function access to the pool owner
     modifier onlyOwner() {
         // Implementation
         _;
     }
 
-    // Event emitted when tokens are rebalanced
+    /// @notice Emitted when tokens are rebalanced
+    /// @param tokens Array of token addresses
+    /// @param proportions Array of new token proportions
     event Rebalanced(address[] tokens, uint256[] proportions);
-    // Event emitted when take-profit actions are executed
+
+    /// @notice Emitted when take-profit actions are executed
     event TakeProfitExecuted();
-    // Event emitted when stop-loss actions are executed
+
+    /// @notice Emitted when stop-loss actions are executed
     event StopLossExecuted();
 
-    /**
-     * @notice Constructs a new PoolContract instance
-     * @param _tokens Array of token addresses
-     * @param _proportions Array of token proportions
-     * @param _threshold Threshold percentage for actions
-     * @param _takeProfit Amount to trigger take-profit actions
-     * @param _stopLoss Array of stop-loss values
-     * @param _timePeriod Time period for rebalancing
-     * @param _owner Address of the pool owner
-     */
+    /// @notice Initializes a new PoolContract instance
+    /// @param _tokens Array of token addresses in the pool
+    /// @param _proportions Array of initial token proportions
+    /// @param _threshold Threshold percentage for rebalancing actions
+    /// @param _takeProfit Amount to trigger take-profit actions
+    /// @param _stopLoss Array of stop-loss values for each token
+    /// @param _timePeriod Time period for regular rebalancing checks
+    /// @param _owner Address of the pool owner
     constructor(
         address[] memory _tokens,
         uint256[] memory _proportions,
@@ -52,20 +56,16 @@ contract PoolContract {
         // Implementation
     }
 
-    /**
-     * @notice Fetches real-time prices of tokens
-     * @return Array of token prices
-     */
+    /// @notice Fetches real-time prices of tokens in the pool
+    /// @return Array of current token prices
     function fetchPrices() internal view returns (uint256[] memory) {
         // Implementation
     }
 
-    /**
-     * @notice Swaps tokens via the Uniswap router
-     * @param tokenIn Address of the input token
-     * @param tokenOut Address of the output token
-     * @param amountIn Amount of the input token to swap
-     */
+    /// @notice Swaps tokens using the Uniswap router
+    /// @param tokenIn Address of the input token
+    /// @param tokenOut Address of the output token
+    /// @param amountIn Amount of the input token to swap
     function swapTokens(
         address tokenIn,
         address tokenOut,
@@ -74,47 +74,35 @@ contract PoolContract {
         // Implementation
     }
 
-    /**
-     * @notice Rebalances the pool based on target proportions
-     */
+    /// @notice Rebalances the pool based on target proportions
     function rebalance() public onlyOwner {
         // Implementation
     }
 
-    /**
-     * @notice Executes take-profit actions if profit meets the threshold
-     */
+    /// @notice Executes take-profit actions if profit meets the threshold
     function executeTP() public onlyOwner {
         // Implementation
     }
 
-    /**
-     * @notice Executes stop-loss actions if token prices fall below the stop-loss values
-     */
+    /// @notice Executes stop-loss actions if token prices fall below the stop-loss values
     function executeSL() public onlyOwner {
         // Implementation
     }
 
-    /**
-     * @notice Calculates the current value of the pool
-     * @param prices Array of current token prices
-     * @return Total value of the pool
-     */
+    /// @notice Calculates the current total value of the pool
+    /// @param prices Array of current token prices
+    /// @return Total value of the pool
     function getPoolValue(uint256[] memory prices) internal view returns (uint256) {
         // Implementation
     }
 
-    /**
-     * @notice Calculates the profit based on token holdings and prices
-     * @param prices Array of current token prices
-     * @return Calculated profit
-     */
+    /// @notice Calculates the current profit of the pool
+    /// @param prices Array of current token prices
+    /// @return Calculated profit
     function calculateProfit(uint256[] memory prices) internal view returns (uint256) {
         // Implementation
     }
 
-    /**
-     * @notice Fallback function to receive ETH
-     */
+    /// @notice Fallback function to receive ETH
     receive() external payable {}
 }
