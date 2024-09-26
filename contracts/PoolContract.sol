@@ -2,13 +2,14 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-import "./PoolFactory.sol";
+import {AggregatorInterface} from "./Interfaces/AggregatorInterface.sol";
 
 contract PoolContract {
     address[2] public tokens;
     address public owner;
-    address public stablecoin;
+    address immutable stableCoin = address(0); //need to update this
     uint256[2] public proportions;
     uint256[2] public initialTokenValues;
     uint256[2] public takeProfit;
@@ -16,10 +17,8 @@ contract PoolContract {
     uint256 public threshold;
     uint256 public timePeriod;
 
-    // AggregatorV3Interface internal ethUsdOracle;
-    // AggregatorV3Interface internal btcUsdOracle;
-
-    PoolFactory public factory; //temp usesss
+    AggregatorInterface oracleForToken0;
+    AggregatorInterface oracleForToken1;
 
     uint256 constant MAX_BPS = 10_000; // for Percentage Values
 
@@ -40,11 +39,7 @@ contract PoolContract {
         uint256[2] newStopLoss
     );
     event TokensWithdrawn(address token, uint256 amount);
-
-    // for tempp use
-    function setSwapRouter(address _swapRouter) external {
-        swapRouter = ISwapRouter(_swapRouter);
-    }
+    event TokensDeposited(address token, uint256 amount);
 
     constructor(
         address[2] memory _tokens,
@@ -55,8 +50,8 @@ contract PoolContract {
         uint256[2] memory _stopLoss,
         uint256 _timePeriod,
         address _owner,
-        address _stablecoin,
-        address _factory //for temporary
+        address _oracleForToken0,
+        address _oracleForToken1
     ) {
         tokens = _tokens;
         proportions = _proportions;
@@ -67,34 +62,26 @@ contract PoolContract {
         owner = _owner;
         lastChecked = block.timestamp;
         initialTokenValues = _initialTokenValues;
-        stablecoin = _stablecoin;
-        // TO DO : add oracle instances
+        oracleForToken0 = AggregatorInterface(_oracleForToken0);
+        oracleForToken1 = AggregatorInterface(_oracleForToken1);
         swapRouter = ISwapRouter(0x61Ec26aA57019C486B10502285c5A3D4A4750AD7); //need to change this
-        factory = PoolFactory(_factory);
     }
 
-    // function fetchPrices() public view returns (uint256[2] memory) {
-    //     int256[2] memory rawPrices;
-    //     uint256[2] memory prices;
-
-    //     // (, rawPrices[0], , , ) = btcUsdOracle.latestRoundData();
-    //     // (, rawPrices[1], , , ) = ethUsdOracle.latestRoundData();
-
-    //     for (uint i = 0; i < 2; i++) {
-    //         if (rawPrices[i] < 0) {
-    //             prices[i] = uint256(-rawPrices[i]);
-    //         } else {
-    //             prices[i] = uint256(rawPrices[i]);
-    //         }
-    //     }
-
-    //     return prices;
-    // }
-
     function fetchPrices() public view returns (uint256[2] memory) {
+        int256[2] memory rawPrices;
         uint256[2] memory prices;
-        prices[0] = factory.getTokenPrice(tokens[0]);
-        prices[1] = factory.getTokenPrice(tokens[1]);
+
+        rawPrices[0] = oracleForToken0.latestAnswer();
+        rawPrices[1] = oracleForToken1.latestAnswer();
+
+        for (uint i = 0; i < 2; i++) {
+            if (rawPrices[i] < 0) {
+                prices[i] = uint256(-rawPrices[i]);
+            } else {
+                prices[i] = uint256(rawPrices[i]);
+            }
+        }
+
         return prices;
     }
 
@@ -119,14 +106,16 @@ contract PoolContract {
         swapRouter.exactInputSingle(params);
     }
 
+    // ********************************************For take Profit ******************************************** //
+
     function _checkProfit(
         uint256[2] memory prices
     ) internal view returns (bool[2] memory) {
         bool[2] memory profitReached;
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 currentTokenValue = IERC20(tokens[i]).balanceOf(
+            uint256 currentTokenValue = (IERC20(tokens[i]).balanceOf(
                 address(this)
-            ) * prices[i];
+            ) * prices[i]) / getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
             uint256 difference = currentTokenValue > initialTokenValues[i]
                 ? currentTokenValue - initialTokenValues[i]
                 : 0;
@@ -143,24 +132,26 @@ contract PoolContract {
     ) internal {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (profitReached[i]) {
-                uint256 currentTokenValue = IERC20(tokens[i]).balanceOf(
+                uint256 currentTokenValue = (IERC20(tokens[i]).balanceOf(
                     address(this)
-                ) * prices[i];
+                ) * prices[i]) / getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
                 uint256 profit = currentTokenValue - initialTokenValues[i];
-                uint256 amountToSwap = (profit / prices[i]) *
-                    10 ** getDecimalOfToken(tokens[i]);
+                uint256 amountToSwap = (profit *
+                    10 ** getDecimalOfToken(tokens[i])) / prices[i];
 
-                _swapTokens(tokens[i], stablecoin, amountToSwap);
+                _swapTokens(tokens[i], stableCoin, amountToSwap);
                 emit TakeProfitExecuted(tokens[i], amountToSwap);
             }
         }
     }
 
+    // ********************************************For handle Loss ********************************************  //
+
     function _checkAndExecuteStopLoss(uint256[2] memory prices) internal {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (prices[i] <= stopLoss[i]) {
                 uint256 balance = IERC20(tokens[i]).balanceOf(address(this));
-                _swapTokens(tokens[i], stablecoin, balance);
+                _swapTokens(tokens[i], stableCoin, balance);
                 emit StopLossExecuted(tokens[i], balance);
             }
         }
@@ -168,24 +159,23 @@ contract PoolContract {
 
     function _getPoolValue(
         uint256[2] memory prices
-    ) internal view returns (uint256) {
-        uint256 value = 0;
+    ) internal view returns (uint256 value) {
         for (uint256 i = 0; i < tokens.length; i++) {
-            value += IERC20(tokens[i]).balanceOf(address(this)) * prices[i];
+            value +=
+                (IERC20(tokens[i]).balanceOf(address(this)) * prices[i]) /
+                getDecimalOfToken(tokens[i]);
         }
-        return value;
     }
 
-    function getDecimalOfToken(address token) public view returns (uint8) {
-        return IERC20(token).decimals();
-    }
+    // ********************************************for rebalance ********************************************  //
 
     function _checkRebalanceNeeded(
         uint256[2] memory prices,
         uint256 poolValue
     ) internal view returns (bool) {
-        uint256 valueOfToken0 = IERC20(tokens[0]).balanceOf(address(this)) *
-            prices[0];
+        uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
+            prices[0]) / getDecimalOfToken(tokens[0]);
+
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
         uint256 diffPercentage = currentPercentage > proportions[0]
             ? currentPercentage - proportions[0]
@@ -197,27 +187,33 @@ contract PoolContract {
         uint256[2] memory prices,
         uint256 poolValue
     ) internal {
-        uint256 valueOfToken0 = IERC20(tokens[0]).balanceOf(address(this)) *
-            prices[0];
+        uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
+            prices[0]) / getDecimalOfToken(tokens[0]);
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
         uint256 diffPercentage = currentPercentage > proportions[0]
             ? currentPercentage - proportions[0]
             : proportions[0] - currentPercentage;
 
         uint256 valueToSwap = (poolValue * diffPercentage) / MAX_BPS;
-        uint256 amountToSwap = valueToSwap / prices[0];
+        uint256 amountToSwap;
+        address fromToken;
+        address toToken;
 
-        address fromToken = currentPercentage > proportions[0]
-            ? tokens[0]
-            : tokens[1];
-        address toToken = currentPercentage < proportions[0]
-            ? tokens[0]
-            : tokens[1];
-        _swapTokens(
-            fromToken,
-            toToken,
-            amountToSwap * 10 ** getDecimalOfToken(fromToken)
-        );
+        if (currentPercentage > proportions[0]) {
+            fromToken = tokens[0];
+            toToken = tokens[1];
+            amountToSwap =
+                (valueToSwap * 10 ** getDecimalOfToken(fromToken)) /
+                prices[0];
+        } else if (currentPercentage < proportions[0]) {
+            fromToken = tokens[1];
+            toToken = tokens[0];
+            amountToSwap =
+                (valueToSwap * 10 ** getDecimalOfToken(fromToken)) /
+                prices[1];
+        }
+
+        _swapTokens(fromToken, toToken, amountToSwap);
         emit Rebalanced(tokens, proportions);
     }
 
@@ -256,52 +252,107 @@ contract PoolContract {
         }
     }
 
+    // ********************************************For Update parameters ******************************************** //
+
     /**
      * @dev Allows the pool owner to update the threshold value.
      * @param newThreshold The new threshold value for rebalancing.
      */
-    function updateThreshold(uint256 newThreshold) public onlyOwner {
+    function updateThreshold(uint256 newThreshold) external onlyOwner {
         threshold = newThreshold;
     }
 
     /**
-     * @dev Allows the pool owner to update the take profit percentage for a specific asset.
-     * @param index The index of the asset in the tokens array (0 or 1).
-     * @param newTakeProfit The new take profit percentage for the asset.
+     * @dev Allows the pool owner to update both the take profit and stop loss values for two assets at once.
+     * @param newTakeProfit0 The new take profit percentage for the first asset (index 0).
+     * @param newStopLoss0 The new stop loss price for the first asset (index 0).
+     * @param newTakeProfit1 The new take profit percentage for the second asset (index 1).
+     * @param newStopLoss1 The new stop loss price for the second asset (index 1).
      */
-    function updateTakeProfit(
-        uint256 index,
-        uint256 newTakeProfit
-    ) external onlyOwner {
-        require(index < 2, "Invalid ASset Index.");
-        takeProfit[index] = newTakeProfit;
-    }
-
-    /**
-     * @dev Allows the pool owner to update the stop loss value for a specific asset.
-     * @param index The index of the asset in the tokens array (0 or 1).
-     * @param newStopLoss The new stop loss value for the asset.
-     */
-    function updateStopLoss(
-        uint256 index,
-        uint256 newStopLoss
+    function updateTakeProfitAndStopLoss(
+        uint256 newTakeProfit0,
+        uint256 newStopLoss0,
+        uint256 newTakeProfit1,
+        uint256 newStopLoss1
     ) public onlyOwner {
-        require(index < 2, "Invalid asset index.");
-        stopLoss[index] = newStopLoss;
+        // Update values for the first asset (index 0) only if greater than 0
+        if (newTakeProfit0 > 0) {
+            takeProfit[0] = newTakeProfit0;
+        }
+        if (newStopLoss0 > 0) {
+            stopLoss[0] = newStopLoss0;
+        }
+
+        // Update values for the second asset (index 1) only if greater than 0
+        if (newTakeProfit1 > 0) {
+            takeProfit[1] = newTakeProfit1;
+        }
+        if (newStopLoss1 > 0) {
+            stopLoss[1] = newStopLoss1;
+        }
     }
 
     /**
-     * @dev Allows the pool owner to withdraw specified amount of tokens from the pool.
-     * @param token Address of the token to withdraw.
-     * @param amount Amount of tokens to withdraw.
+     * @dev Allows the pool owner to deposit specified amounts of tokens in the pool.
+     * @param _tokens Array of token addresses to deposit.
+     * @param _amounts Array of amounts of tokens to deposit.
      */
-    function withdrawTokens(address token, uint256 amount) external onlyOwner {
-        require(amount > 0, "Withdraw amount must be greater than zero.");
-        uint256 contractBalance = IERC20(token).balanceOf(address(this));
-        require(contractBalance >= amount, "Insufficient balance to withdraw.");
+    function depositTokens(
+        address[] calldata _tokens,
+        uint256[] calldata _amounts
+    ) external onlyOwner {
+        require(tokens.length == _amounts.length, "Arrays length mismatch.");
 
-        IERC20(token).transfer(owner, amount);
-        emit TokensWithdrawn(token, amount);
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            if (_amounts[i] > 0) {
+                IERC20(tokens[i]).transferFrom(
+                    msg.sender,
+                    address(this),
+                    _amounts[i]
+                );
+                emit TokensDeposited(tokens[i], _amounts[i]);
+            }
+        }
+    }
+
+    /**
+     * @dev Allows the pool owner to withdraw specified amounts of tokens from the pool.
+     * @param _tokens Array of token addresses to withdraw.
+     * @param _amounts Array of amounts of tokens to withdraw.
+     */
+    function withdrawTokens(
+        address[] calldata _tokens,
+        uint256[] calldata _amounts
+    ) external onlyOwner {
+        require(tokens.length == _amounts.length, "Arrays length mismatch.");
+
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            if (_amounts[i] > 0) {
+                uint256 contractBalance = IERC20(tokens[i]).balanceOf(
+                    address(this)
+                );
+                require(
+                    contractBalance >= _amounts[i],
+                    "Insufficient balance to withdraw."
+                );
+
+                IERC20(tokens[i]).transfer(owner, _amounts[i]);
+                emit TokensWithdrawn(tokens[i], _amounts[i]);
+            }
+        }
+    }
+
+    // ******************************************** all getter funcntions ********************************************  //
+
+    function getDecimalOfToken(address token) public view returns (uint8) {
+        return IERC20(token).decimals();
+    }
+
+    //it will only use when two tokens have different decimals
+    function getDecimalOfPriceOracle(
+        address oracle
+    ) public view returns (uint8) {
+        return AggregatorInterface(oracle).decimals();
     }
 
     //need to check that required or not?
