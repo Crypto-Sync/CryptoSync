@@ -1,0 +1,21 @@
+{
+  "name": "cryptosync",
+  "version": "1.0.0",
+  "main": "tronbox-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "tronbox": "^4.0.0"
+  },
+  "devDependencies": {
+    "solc": "^0.8.6"
+  }
+}
