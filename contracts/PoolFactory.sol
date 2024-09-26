@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {AggregatorInterface} from "./Interfaces/AggregatorInterface.sol";
 
 import "./PoolContract.sol";
@@ -15,9 +16,9 @@ contract PoolFactory {
 
     // TO DO :: Need to add the Create the Oracle instance according to the Token addresses
     AggregatorInterface btcUsdOracle =
-        AggregatorInterface(0x3015aa11f5c2D4Bd0f891E708C8927961b38cE7D);
+        AggregatorInterface(0x060976B5b94b816b8Ff709A4c16A9b3D3Cbe2D95);
     AggregatorInterface ethUsdOracle =
-        AggregatorInterface(0x61Ec26aA57019C486B10502285c5A3D4A4750AD7);
+        AggregatorInterface(0x9CEE01f7c133D041c90EbAc2D0134CE864110c53);
 
     function createPool(
         address[2] memory tokens,
@@ -52,7 +53,7 @@ contract PoolFactory {
         for (uint256 i = 0; i < tokens.length; i++) {
             initialTokenValues[i] =
                 (amounts[i] * entryPrices[i]) /
-                IERC20(tokens[i]).decimals();
+                IERC20Metadata(tokens[i]).decimals();
         }
 
         require(

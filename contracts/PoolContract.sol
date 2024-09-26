@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 
 import {AggregatorInterface} from "./Interfaces/AggregatorInterface.sol";
 
 contract PoolContract {
     address[2] public tokens;
     address public owner;
-    address immutable stableCoin = address(0); //need to update this
+    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C; //USDT 
     uint256[2] public proportions;
     uint256[2] public initialTokenValues;
     uint256[2] public takeProfit;
@@ -254,41 +256,51 @@ contract PoolContract {
 
     // ********************************************For Update parameters ******************************************** //
 
-    /**
-     * @dev Allows the pool owner to update the threshold value.
+   /**
+     * @dev Allows the pool owner to update various parameters in one function call.
+     * Only updates parameters if the new values are greater than 0 and different from the current values.
+     * If any parameter is passed as 0, it will retain the current/default value.
      * @param newThreshold The new threshold value for rebalancing.
+     * @param newProportions The new proportions for the two assets.
+     * @param newTakeProfit The new take profit percentages for the two assets.
+     * @param newStopLoss The new stop loss prices for the two assets.
      */
-    function updateThreshold(uint256 newThreshold) external onlyOwner {
-        threshold = newThreshold;
-    }
-
-    /**
-     * @dev Allows the pool owner to update both the take profit and stop loss values for two assets at once.
-     * @param newTakeProfit0 The new take profit percentage for the first asset (index 0).
-     * @param newStopLoss0 The new stop loss price for the first asset (index 0).
-     * @param newTakeProfit1 The new take profit percentage for the second asset (index 1).
-     * @param newStopLoss1 The new stop loss price for the second asset (index 1).
-     */
-    function updateTakeProfitAndStopLoss(
-        uint256 newTakeProfit0,
-        uint256 newStopLoss0,
-        uint256 newTakeProfit1,
-        uint256 newStopLoss1
+    function updateParameters(
+        uint256 newThreshold,
+        uint256[2] memory newProportions,
+        uint256[2] memory newTakeProfit,
+        uint256[2] memory newStopLoss
     ) public onlyOwner {
-        // Update values for the first asset (index 0) only if greater than 0
-        if (newTakeProfit0 > 0) {
-            takeProfit[0] = newTakeProfit0;
+        // Check and update threshold
+        if (newThreshold > 0 && newThreshold != threshold) {
+            require(newThreshold <= MAX_BPS, "Threshold must be <= 10_000");
+            threshold = newThreshold;
         }
-        if (newStopLoss0 > 0) {
-            stopLoss[0] = newStopLoss0;
+        // Check and update proportions
+        for (uint8 i = 0; i < 2; i++) {
+            if (newProportions[i] > 0 && newProportions[i] != proportions[i]) {
+                proportions[i] = newProportions[i];
+            }
         }
 
-        // Update values for the second asset (index 1) only if greater than 0
-        if (newTakeProfit1 > 0) {
-            takeProfit[1] = newTakeProfit1;
+        // Check and update takeProfit
+        for (uint8 i = 0; i < 2; i++) {
+            if (newTakeProfit[i] == 0) {
+                continue;
+            }
+            require(
+                newTakeProfit[i] > threshold,
+                "new take Profit should be greater than threshold"
+            );
+            if (newTakeProfit[i] > 0 && newTakeProfit[i] != takeProfit[i]) {
+                takeProfit[i] = newTakeProfit[i];
+            }
         }
-        if (newStopLoss1 > 0) {
-            stopLoss[1] = newStopLoss1;
+        // Check and update stopLoss
+        for (uint8 i = 0; i < 2; i++) {
+            if (newStopLoss[i] > 0 && newStopLoss[i] != stopLoss[i]) {
+                stopLoss[i] = newStopLoss[i];
+            }
         }
     }
 
@@ -345,7 +357,7 @@ contract PoolContract {
     // ******************************************** all getter funcntions ********************************************  //
 
     function getDecimalOfToken(address token) public view returns (uint8) {
-        return IERC20(token).decimals();
+        return IERC20Metadata(token).decimals();
     }
 
     //it will only use when two tokens have different decimals
@@ -354,7 +366,4 @@ contract PoolContract {
     ) public view returns (uint8) {
         return AggregatorInterface(oracle).decimals();
     }
-
-    //need to check that required or not?
-    receive() external payable {}
 }
