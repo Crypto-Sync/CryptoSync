@@ -172,9 +172,9 @@ contract PoolContract {
     // ********************************************for rebalance ********************************************  //
 
     function _checkRebalanceNeeded(
-        uint256[2] memory prices,
-        uint256 poolValue
+        uint256[2] memory prices
     ) internal view returns (bool) {
+        uint256 poolValue = _getPoolValue(prices);
         uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
             prices[0]) / 10**getDecimalOfToken(tokens[0]);
 
@@ -186,9 +186,9 @@ contract PoolContract {
     }
 
     function _executeRebalance(
-        uint256[2] memory prices,
-        uint256 poolValue
+        uint256[2] memory prices
     ) internal {
+        uint256 poolValue = _getPoolValue(prices);
         uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
             prices[0]) / 10**getDecimalOfToken(tokens[0]);
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
@@ -237,7 +237,7 @@ contract PoolContract {
         _executeTakeProfit(prices, profitReached);
 
         // Check if rebalance is needed
-        bool rebalanceNeeded = _checkRebalanceNeeded(prices, poolValue);
+        bool rebalanceNeeded = _checkRebalanceNeeded(prices);
 
         if (rebalanceNeeded) {
             if (
@@ -249,7 +249,7 @@ contract PoolContract {
 
                 _executeTakeProfit(prices, profitReached);
             } else {
-                _executeRebalance(prices, poolValue);
+                _executeRebalance(prices);
             }
         }
     }
