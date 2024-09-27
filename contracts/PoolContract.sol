@@ -117,7 +117,7 @@ contract PoolContract {
         for (uint256 i = 0; i < tokens.length; i++) {
             uint256 currentTokenValue = (IERC20(tokens[i]).balanceOf(
                 address(this)
-            ) * prices[i]) / getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
+            ) * prices[i]) / 10**getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
             uint256 difference = currentTokenValue > initialTokenValues[i]
                 ? currentTokenValue - initialTokenValues[i]
                 : 0;
@@ -136,7 +136,7 @@ contract PoolContract {
             if (profitReached[i]) {
                 uint256 currentTokenValue = (IERC20(tokens[i]).balanceOf(
                     address(this)
-                ) * prices[i]) / getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
+                ) * prices[i]) / 10**getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
                 uint256 profit = currentTokenValue - initialTokenValues[i];
                 uint256 amountToSwap = (profit *
                     10 ** getDecimalOfToken(tokens[i])) / prices[i];
@@ -165,7 +165,7 @@ contract PoolContract {
         for (uint256 i = 0; i < tokens.length; i++) {
             value +=
                 (IERC20(tokens[i]).balanceOf(address(this)) * prices[i]) /
-                getDecimalOfToken(tokens[i]);
+                10**getDecimalOfToken(tokens[i]);
         }
     }
 
@@ -176,7 +176,7 @@ contract PoolContract {
         uint256 poolValue
     ) internal view returns (bool) {
         uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
-            prices[0]) / getDecimalOfToken(tokens[0]);
+            prices[0]) / 10**getDecimalOfToken(tokens[0]);
 
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
         uint256 diffPercentage = currentPercentage > proportions[0]
@@ -190,7 +190,7 @@ contract PoolContract {
         uint256 poolValue
     ) internal {
         uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
-            prices[0]) / getDecimalOfToken(tokens[0]);
+            prices[0]) / 10**getDecimalOfToken(tokens[0]);
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
         uint256 diffPercentage = currentPercentage > proportions[0]
             ? currentPercentage - proportions[0]

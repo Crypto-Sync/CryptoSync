@@ -53,7 +53,7 @@ contract PoolFactory {
         for (uint256 i = 0; i < tokens.length; i++) {
             initialTokenValues[i] =
                 (amounts[i] * entryPrices[i]) /
-                IERC20Metadata(tokens[i]).decimals();
+                10 ** IERC20Metadata(tokens[i]).decimals();
         }
 
         require(
