@@ -140,7 +140,7 @@ contract PoolContract {
                 uint256 profit = currentTokenValue - initialTokenValues[i];
                 uint256 amountToSwap = (profit *
                     10 ** getDecimalOfToken(tokens[i])) / prices[i];
-
+                
                 _swapTokens(tokens[i], stableCoin, amountToSwap);
                 emit TakeProfitExecuted(tokens[i], amountToSwap);
             }
@@ -227,7 +227,6 @@ contract PoolContract {
         lastChecked = block.timestamp;
 
         uint256[2] memory prices = fetchPrices();
-        uint256 poolValue = _getPoolValue(prices);
 
         // Check stop-loss conditions
         _checkAndExecuteStopLoss(prices);
