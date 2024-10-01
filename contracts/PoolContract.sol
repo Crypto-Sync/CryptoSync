@@ -5,13 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-
 import {AggregatorInterface} from "./Interfaces/AggregatorInterface.sol";
 
 contract PoolContract {
     address[2] public tokens;
     address public owner;
-    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C; //USDT 
+    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C; //USDT
     uint256[2] public proportions;
     uint256[2] public initialTokenValues;
     uint256[2] public takeProfit;
@@ -115,9 +114,8 @@ contract PoolContract {
     ) internal view returns (bool[2] memory) {
         bool[2] memory profitReached;
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 currentTokenValue = (IERC20(tokens[i]).balanceOf(
-                address(this)
-            ) * prices[i]) / 10**getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
+            uint256 currentTokenValue = (balanceOf(tokens[i]) * prices[i]) /
+                10 ** getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
             uint256 difference = currentTokenValue > initialTokenValues[i]
                 ? currentTokenValue - initialTokenValues[i]
                 : 0;
@@ -134,15 +132,15 @@ contract PoolContract {
     ) internal {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (profitReached[i]) {
-                uint256 currentTokenValue = (IERC20(tokens[i]).balanceOf(
-                    address(this)
-                ) * prices[i]) / 10**getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
+                uint256 currentTokenValue = (balanceOf(tokens[i]) * prices[i]) /
+                    10 ** getDecimalOfToken(tokens[i]); //(in this price should be in noraml from like 1000$)
                 uint256 profit = currentTokenValue - initialTokenValues[i];
                 uint256 amountToSwap = (profit *
                     10 ** getDecimalOfToken(tokens[i])) / prices[i];
-                
-                _swapTokens(tokens[i], stableCoin, amountToSwap);
-                emit TakeProfitExecuted(tokens[i], amountToSwap);
+                if (amountToSwap > 0) {
+                    _swapTokens(tokens[i], stableCoin, amountToSwap);
+                    emit TakeProfitExecuted(tokens[i], amountToSwap);
+                }
             }
         }
     }
@@ -152,9 +150,11 @@ contract PoolContract {
     function _checkAndExecuteStopLoss(uint256[2] memory prices) internal {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (prices[i] <= stopLoss[i]) {
-                uint256 balance = IERC20(tokens[i]).balanceOf(address(this));
-                _swapTokens(tokens[i], stableCoin, balance);
-                emit StopLossExecuted(tokens[i], balance);
+                uint256 balance = balanceOf(tokens[i]);
+                if(balance > 0) {
+                    _swapTokens(tokens[i], stableCoin, balance);
+                    emit StopLossExecuted(tokens[i], balance);
+                }
             }
         }
     }
@@ -164,8 +164,8 @@ contract PoolContract {
     ) internal view returns (uint256 value) {
         for (uint256 i = 0; i < tokens.length; i++) {
             value +=
-                (IERC20(tokens[i]).balanceOf(address(this)) * prices[i]) /
-                10**getDecimalOfToken(tokens[i]);
+                (balanceOf(tokens[i]) * prices[i]) /
+                10 ** getDecimalOfToken(tokens[i]);
         }
     }
 
@@ -175,8 +175,8 @@ contract PoolContract {
         uint256[2] memory prices
     ) internal view returns (bool) {
         uint256 poolValue = _getPoolValue(prices);
-        uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
-            prices[0]) / 10**getDecimalOfToken(tokens[0]);
+        uint256 valueOfToken0 = (balanceOf(tokens[0]) * prices[0]) /
+            10 ** getDecimalOfToken(tokens[0]);
 
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
         uint256 diffPercentage = currentPercentage > proportions[0]
@@ -185,12 +185,10 @@ contract PoolContract {
         return diffPercentage > threshold;
     }
 
-    function _executeRebalance(
-        uint256[2] memory prices
-    ) internal {
+    function _executeRebalance(uint256[2] memory prices) internal {
         uint256 poolValue = _getPoolValue(prices);
-        uint256 valueOfToken0 = (IERC20(tokens[0]).balanceOf(address(this)) *
-            prices[0]) / 10**getDecimalOfToken(tokens[0]);
+        uint256 valueOfToken0 = (balanceOf(tokens[0]) * prices[0]) /
+            10 ** getDecimalOfToken(tokens[0]);
         uint256 currentPercentage = (valueOfToken0 * MAX_BPS) / poolValue;
         uint256 diffPercentage = currentPercentage > proportions[0]
             ? currentPercentage - proportions[0]
@@ -214,9 +212,10 @@ contract PoolContract {
                 (valueToSwap * 10 ** getDecimalOfToken(fromToken)) /
                 prices[1];
         }
-
-        _swapTokens(fromToken, toToken, amountToSwap);
-        emit Rebalanced(tokens, proportions);
+        if(amountToSwap > 0 ){
+            _swapTokens(fromToken, toToken, amountToSwap);
+            emit Rebalanced(tokens, proportions);
+        }
     }
 
     function rebalance() public onlyOwner {
@@ -255,7 +254,7 @@ contract PoolContract {
 
     // ********************************************For Update parameters ******************************************** //
 
-   /**
+    /**
      * @dev Allows the pool owner to update various parameters in one function call.
      * Only updates parameters if the new values are greater than 0 and different from the current values.
      * If any parameter is passed as 0, it will retain the current/default value.
@@ -339,9 +338,7 @@ contract PoolContract {
 
         for (uint256 i = 0; i < _tokens.length; i++) {
             if (_amounts[i] > 0) {
-                uint256 contractBalance = IERC20(tokens[i]).balanceOf(
-                    address(this)
-                );
+                uint256 contractBalance = balanceOf(tokens[i]);
                 require(
                     contractBalance >= _amounts[i],
                     "Insufficient balance to withdraw."
@@ -354,6 +351,10 @@ contract PoolContract {
     }
 
     // ******************************************** all getter funcntions ********************************************  //
+
+    function balanceOf(address token) public view returns (uint256) {
+        return IERC20(token).balanceOf(address(this));
+    }
 
     function getDecimalOfToken(address token) public view returns (uint8) {
         return IERC20Metadata(token).decimals();
