@@ -151,7 +151,7 @@ contract PoolContract {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (prices[i] <= stopLoss[i]) {
                 uint256 balance = balanceOf(tokens[i]);
-                if(balance > 0) {
+                if (balance > 0) {
                     _swapTokens(tokens[i], stableCoin, balance);
                     emit StopLossExecuted(tokens[i], balance);
                 }
@@ -182,6 +182,9 @@ contract PoolContract {
         uint256 diffPercentage = currentPercentage > proportions[0]
             ? currentPercentage - proportions[0]
             : proportions[0] - currentPercentage;
+        if (balanceOf(tokens[0]) == 0 || balanceOf(tokens[1]) == 0) {
+            return false;
+        }
         return diffPercentage > threshold;
     }
 
@@ -212,7 +215,7 @@ contract PoolContract {
                 (valueToSwap * 10 ** getDecimalOfToken(fromToken)) /
                 prices[1];
         }
-        if(amountToSwap > 0 ){
+        if (amountToSwap > 0) {
             _swapTokens(fromToken, toToken, amountToSwap);
             emit Rebalanced(tokens, proportions);
         }
