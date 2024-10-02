@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import * as Select from '@radix-ui/react-select'
-import * as SliderPrimitive from '@radix-ui/react-slider';
+// import * as SliderPrimitive from '@radix-ui/react-slider';
 import { ChevronDown, Check, Info } from 'lucide-react';
 import Image from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -32,7 +32,7 @@ interface RebalancingOption {
 const tokens: Token[] = [
     { id: 'btc', name: 'BTC', fullName: 'Bitcoin', icon: "bitcoin.svg", color: 'bg-yellow-500', balance: 1.5 },
     { id: 'eth', name: 'ETH', fullName: 'Ethereum', icon: "eth-icon.svg", color: 'bg-blue-500', balance: 10 },
-    { id: 'tron', name: 'TRON', fullName: 'Tron', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 10 },
+    { id: 'tron', name: 'TRON', fullName: 'Tron', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
 ];
 
 // Rebalancing options
@@ -56,24 +56,22 @@ interface TokenSliderProps {
 
 function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLossChange, takeProfit, stopLoss, prices }: TokenSliderProps) {
     // const ethPriceInUSD: number = prices ? prices.eth : 0;
-    const [sliderValue, setSliderValue] = useState<number>(0);
-    const selectedAmount = (sliderValue / 100) * token?.balance;
+    // const [sliderValue, setSliderValue] = useState<number>(0);
+    const [selectedAmount, setSelectedAmount] = useState<number>(0);
     // const remainingBalance = token?.balance - selectedAmount;
 
-    const handleSliderChange = (value: number[]) => {
-        onPercentageChange(token.id, value[0], (value[0] / 100) * token.balance);
-        // onPercentageChange(token.id, value[0], selectedAmount);
-        setSliderValue(value[0]);
-    };
+    // const handleSliderChange = (value: number[]) => {
+    //     onPercentageChange(token.id, value[0], (value[0] / 100) * token.balance);
+    //     setSliderValue(value[0]);
+    // };
 
-    // Handle changes from the input
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const inputValue = parseFloat(e.target.value);
-        if (!isNaN(inputValue) && inputValue >= 0 && inputValue <= 100) {
-            setSliderValue(inputValue);
-            onPercentageChange(token.id, inputValue, (inputValue / 100) * token.balance);
-        }
-    };
+    // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const inputValue = parseFloat(e.target.value);
+    //     if (!isNaN(inputValue) && inputValue >= 0 && inputValue <= 100) {
+    //         setSliderValue(inputValue);
+    //         onPercentageChange(token.id, inputValue, (inputValue / 100) * token.balance);
+    //     }
+    // };
 
     const handleTakeProfitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = Number(e.target.value)
@@ -86,9 +84,20 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
     }
     const tokenPrice = prices ? prices[token.id as keyof CryptoPrices] : null;
 
+    const handleInputAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const inputValue = parseFloat(e.target.value);
+
+        if (!isNaN(inputValue) && inputValue >= 0 && inputValue <= token.balance) {
+            setSelectedAmount(inputValue)
+            const percentage = (inputValue / token.balance) * 100;
+            // setSliderValue(percentage);
+            onPercentageChange(token.id, percentage, inputValue);
+        }
+    };
+
     return (
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full mb-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
                     <div className={`border border-${token?.color} p-1 rounded-full mr-3`}>
                         <Image src={token?.icon} alt="token icon" className="w-8 h-8 text-white" width={100} height={100} />
@@ -100,11 +109,11 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                 </div>
                 <div className="text-right">
                     <p className="text-white font-semibold">{token?.balance.toFixed(4)}</p>
-                    <p className="text-gray-400 text-sm">Total Balance</p>
+                    <p className="text-gray-400 text-sm">Balance</p>
                 </div>
             </div>
 
-            <div className="mb-6 flex items-center">
+            {/* <div className="mb-6 flex items-center">
                 <SliderPrimitive.Root
                     value={[sliderValue]}
                     max={100}
@@ -122,29 +131,35 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                 <div className="rounded-lg pl-3 flex justify-between items-center">
                     <input
                         type="number"
-                        value={sliderValue}
+                        value={sliderValue.toFixed(2)}
                         onChange={handleInputChange}
                         className="w-16 text-white bg-gray-700 rounded-md p-1 text-lg text-right focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
                         min="0"
                         max="100"
                         step="1"
                     />
-                    {/* <span className="text-white font-semibold text-lg">%</span> */}
+                </div>
+            </div> */}
+
+            <div className="flex flex-col justify-between text-sm mb-2 mt-4">
+                <span className="text-gray-400 mb-2">Enter Amount<span className='text-gray-500 text-sm ml-2'>({token?.name})</span></span>
+                <div className='flex items-center justify-center gap-2'>
+                    <input
+                        type="number"
+                        value={selectedAmount}
+                        onChange={handleInputAmountChange}
+                        className="px-3 py-2 flex-1 text-white bg-gray-700 rounded-md p-1 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                        min={0}
+                        max={token?.balance}
+                        step={0.01}
+                    />
                 </div>
             </div>
 
-            <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-400">Token</span>
-                <span className="text-white font-medium">
-                    {selectedAmount.toFixed(4)} {token?.name}
-                </span>
-            </div>
-
-            <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Value <span className='text-gray-500'>(in $)</span></span>
-                <span className="text-white font-medium">
+            <div className="flex justify-start items-center text-sm">
+                <span className="text-white font-medium text-lg">
                     {/* {remainingBalance.toFixed(4)} {token?.name} */}
-                    ${tokenPrice ? (tokenPrice * selectedAmount).toFixed(4) : 0}
+                    <span className='text-gray-500 mr-1 text-sm'>$</span>{tokenPrice ? (tokenPrice * selectedAmount).toFixed(4) : 0}
                 </span>
             </div>
 
@@ -391,7 +406,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
 
         console.log('Creating pool:', {
             poolName,
-            totalValue: totalValue.toFixed(2),
+            totalValue: totalValue,
             tokenProportions,
             rebalancingThreshold,
             rebalancingFrequency,
@@ -417,7 +432,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                 {selectedTokens.map((tokenId, index) => (
                     <div key={tokenId} className="flex flex-col gap-4">
                         <TokenSelector
@@ -439,7 +454,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
 
             <Card className="bg-gray-800 mb-6 border-none">
                 <CardHeader>
-                    <CardTitle className="text-xl font-semibold text-white">Token Proportion</CardTitle>
+                    <CardTitle className="text-xl font-normal text-white">Token Proportion</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {selectedTokens.map((tokenId) => {
