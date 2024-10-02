@@ -221,7 +221,7 @@ contract PoolContract {
         }
     }
 
-    function rebalance() public onlyOwner {
+    function rebalance() public {
         require(
             block.timestamp >= lastChecked + timePeriod,
             "Rebalance: Time period not reached."
