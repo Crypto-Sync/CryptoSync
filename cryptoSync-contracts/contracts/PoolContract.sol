@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "./PoolFactory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import {AggregatorInterface} from "./Interfaces/AggregatorInterface.sol";
-
 contract PoolContract {
+
+    PoolFactory public factory;
+
     address[2] public tokens;
     address public owner;
-    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C; //USDT
+    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C; // TODO :need to change it to NILE testnet USDT address
     uint256[2] public proportions;
     uint256[2] public initialTokenValues;
     uint256[2] public takeProfit;
     uint256[2] public stopLoss;
     uint256 public threshold;
     uint256 public timePeriod;
-
-    AggregatorInterface oracleForToken0;
-    AggregatorInterface oracleForToken1;
 
     uint256 constant MAX_BPS = 10_000; // for Percentage Values
 
@@ -28,6 +27,11 @@ contract PoolContract {
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not the pool owner.");
+        _;
+    }
+
+    modifier onlyOperator() {
+        require(factory.isOperator(msg.sender), "You are not the operator");
         _;
     }
 
@@ -43,6 +47,7 @@ contract PoolContract {
     event TokensDeposited(address token, uint256 amount);
 
     constructor(
+        address _factoryAddress,
         address[2] memory _tokens,
         uint256[2] memory _initialTokenValues,
         uint256[2] memory _proportions,
@@ -50,10 +55,9 @@ contract PoolContract {
         uint256[2] memory _takeProfit,
         uint256[2] memory _stopLoss,
         uint256 _timePeriod,
-        address _owner,
-        address _oracleForToken0,
-        address _oracleForToken1
+        address _owner
     ) {
+        factory = PoolFactory(_factoryAddress);
         tokens = _tokens;
         proportions = _proportions;
         threshold = _threshold;
@@ -63,25 +67,13 @@ contract PoolContract {
         owner = _owner;
         lastChecked = block.timestamp;
         initialTokenValues = _initialTokenValues;
-        oracleForToken0 = AggregatorInterface(_oracleForToken0);
-        oracleForToken1 = AggregatorInterface(_oracleForToken1);
-        swapRouter = ISwapRouter(0x61Ec26aA57019C486B10502285c5A3D4A4750AD7); //need to change this
+        swapRouter = ISwapRouter(0x61Ec26aA57019C486B10502285c5A3D4A4750AD7);
     }
 
     function fetchPrices() public view returns (uint256[2] memory) {
-        int256[2] memory rawPrices;
         uint256[2] memory prices;
-
-        rawPrices[0] = oracleForToken0.latestAnswer();
-        rawPrices[1] = oracleForToken1.latestAnswer();
-
-        for (uint i = 0; i < 2; i++) {
-            if (rawPrices[i] < 0) {
-                prices[i] = uint256(-rawPrices[i]);
-            } else {
-                prices[i] = uint256(rawPrices[i]);
-            }
-        }
+        prices[0] = factory.getOnChainPrice(tokens[0]);
+        prices[1] = factory.getOnChainPrice(tokens[1]);
 
         return prices;
     }
@@ -90,22 +82,25 @@ contract PoolContract {
         address tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) internal {
+    ) internal returns(uint256 amountOut) {
         IERC20(tokenIn).approve(address(swapRouter), amountIn);
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
-                fee: 3000,
-                recipient: address(this),
-                deadline: block.timestamp + 60,
-                amountIn: amountIn,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            });
 
-        swapRouter.exactInputSingle(params);
+        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+            path: abi.encodePacked(tokenIn, uint24(3000), stableCoin, uint24(3000), tokenOut),
+            recipient: msg.sender,
+            deadline: block.timestamp + 15,
+            amountIn: amountIn,
+            amountOutMinimum: 0
+        });
+
+        amountOut = swapRouter.exactInput(params);
+
+
+
+        // TODO : get onChain price from sunswap and call the setPrice function of Factor Contract
     }
+
+
 
     // ********************************************For take Profit ******************************************** //
 
@@ -221,7 +216,7 @@ contract PoolContract {
         }
     }
 
-    function rebalance() public {
+    function rebalance() external onlyOperator {
         require(
             block.timestamp >= lastChecked + timePeriod,
             "Rebalance: Time period not reached."
@@ -253,7 +248,9 @@ contract PoolContract {
                 _executeRebalance(prices);
             }
         }
+
     }
+
 
     // ********************************************For Update parameters ******************************************** //
 
@@ -361,12 +358,5 @@ contract PoolContract {
 
     function getDecimalOfToken(address token) public view returns (uint8) {
         return IERC20Metadata(token).decimals();
-    }
-
-    //it will only use when two tokens have different decimals
-    function getDecimalOfPriceOracle(
-        address oracle
-    ) public view returns (uint8) {
-        return AggregatorInterface(oracle).decimals();
     }
 }

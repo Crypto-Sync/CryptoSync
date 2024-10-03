@@ -3,15 +3,22 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {AggregatorInterface} from "./Interfaces/AggregatorInterface.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
 
 import "./PoolContract.sol";
 
 contract PoolFactory {
     uint256 constant MAX_BPS = 10_000;
+    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C;
+    address public immutable uniswapFactory = 0xCAC0EE410E19A12CCE8805D5374BB60200FADD03;
 
     mapping(address => address[]) public userPools;
-    mapping(address => address) public tokenToOracle;
+    mapping(address => address) public tokenPoolAddresses;
+
+    address[] public operators;
+    mapping(address => bool) public isOperator;
 
     event PoolCreated(address poolAddress, address owner, address[2] tokens);
 
@@ -25,16 +32,63 @@ contract PoolFactory {
         uint256 timePeriod;
     }
 
+    modifier onlyOperator() {
+        require(isOperator[msg.sender], "You are not the operator");
+        _;
+    }
+
     constructor() {
-        tokenToOracle[
-            0xf0B604C851644B6ab9D9453B739A5C07725E4ecA
-        ] = 0x060976B5b94b816b8Ff709A4c16A9b3D3Cbe2D95; // BTC/USD Oracle
-        tokenToOracle[
-            0xD2bD2f2eA43DE2f7Bc98D2656c8e5Be7e88c7f2D
-        ] = 0x9CEE01f7c133D041c90EbAc2D0134CE864110c53; // ETH/USD Oracle
-        tokenToOracle[
-            0x6E6c24c305c2d22d2096Ea2Ea354C92Ca1B389F9
-        ] = 0x9CEE01f7c133D041c90EbAc2D0134CE864110c53; // TRX/USD Oracle (placeholder)
+        operators.push(0xd13b85D23eFdEa60F8B84571254D6bBD7915cDe8);
+        isOperator[0xd13b85D23eFdEa60F8B84571254D6bBD7915cDe8] = true;
+    }
+
+    function setPoolAddresses() external onlyOperator {
+        tokenPoolAddresses[0xE1B8D3435D25ABEC5986A2DDE4E32CC193E5D2F0] = IUniswapV3Factory(uniswapFactory).getPool(
+            0xE1B8D3435D25ABEC5986A2DDE4E32CC193E5D2F0, // SYNC X address
+            stableCoin,
+            3000
+        );
+        tokenPoolAddresses[0xCA319A9A1F5E0E2EACFF6455DC304096ABBEDD6B] = IUniswapV3Factory(uniswapFactory).getPool(
+            0xCA319A9A1F5E0E2EACFF6455DC304096ABBEDD6B, // SYNC Y address
+            stableCoin,
+            3000
+        );
+        tokenPoolAddresses[0xACF2A4D6A04AA8B57AB7042ADDD1EFFB8CD50833] = IUniswapV3Factory(uniswapFactory).getPool(
+            0xACF2A4D6A04AA8B57AB7042ADDD1EFFB8CD50833, // SYNC Z address
+            stableCoin,
+            3000
+        );
+    }
+
+    function getOnChainPrice(
+        address token
+    ) public view returns (uint256 price) {
+        address tokenPoolAddress = tokenPoolAddresses[token];
+        IUniswapV3Pool pool = IUniswapV3Pool(tokenPoolAddress);
+
+        // Set the secondsAgo array for fetching price data
+        uint32[] memory secondsAgos = new uint32[](2);
+        secondsAgos[0] = 0; // Current price
+        secondsAgos[1] = 300; // Price 30 minutes ago
+
+        // Fetch the tick values from the Uniswap pool
+        (int56[] memory tickCumulatives, ) = pool.observe(secondsAgos);
+
+        // Calculate the tick difference
+        int56 tickCumulativesDelta = tickCumulatives[0] - tickCumulatives[1];
+        int24 timeWeightedAverageTick = int24(tickCumulativesDelta / 1800);
+
+        // Convert the tick to a price ratio
+        uint256 priceRatio = OracleLibrary.getQuoteAtTick(
+            timeWeightedAverageTick,
+            uint128(1e18), // Base amount
+            token,
+            stableCoin
+        );
+
+        tokenPrices[token] = priceRatio;
+
+        return priceRatio;
     }
 
     function createPool(PoolParams memory params) external {
@@ -47,12 +101,8 @@ contract PoolFactory {
         );
         _validatePrices(params.tokens, params.stopLoss);
 
-        address[2] memory oracleAddresses = [
-            tokenToOracle[params.tokens[0]],
-            tokenToOracle[params.tokens[1]]
-        ];
-
         PoolContract newPool = new PoolContract(
+            address(this),
             params.tokens,
             _calculateInitialTokenValues(params.tokens, params.amounts),
             params.proportions,
@@ -60,9 +110,7 @@ contract PoolFactory {
             params.takeProfit,
             params.stopLoss,
             params.timePeriod,
-            msg.sender,
-            oracleAddresses[0],
-            oracleAddresses[1]
+            msg.sender
         );
 
         _transferTokens(params.tokens, params.amounts, address(newPool));
@@ -86,17 +134,6 @@ contract PoolFactory {
         );
     }
 
-    function getTokenPrice(address token) public view returns (uint256) {
-        address oracleAddress = tokenToOracle[token];
-        require(oracleAddress != address(0), "Oracle not set for this token");
-
-        AggregatorInterface oracle = AggregatorInterface(oracleAddress);
-        int256 rawPrice = oracle.latestAnswer();
-        uint256 price = rawPrice < 0 ? uint256(-rawPrice) : uint256(rawPrice);
-
-        return price;
-    }
-
     function getAmountRequired(
         address tokenFrom,
         address tokenTo,
@@ -108,8 +145,8 @@ contract PoolFactory {
             "Invalid token address"
         );
 
-        uint256 priceTokenFrom = getTokenPrice(tokenFrom);
-        uint256 priceTokenTo = getTokenPrice(tokenTo);
+        uint256 priceTokenFrom = tokenPrices[tokenFrom];
+        uint256 priceTokenTo = tokenPrices[tokenTo];
         require(
             priceTokenFrom > 0 && priceTokenTo > 0,
             "Token prices not available"
@@ -153,7 +190,7 @@ contract PoolFactory {
         uint256[2] memory stopLoss
     ) internal view {
         for (uint256 i = 0; i < 2; i++) {
-            uint256 entryPrice = getTokenPrice(tokens[i]);
+            uint256 entryPrice = tokenPrices[tokens[i]];
             require(entryPrice > 0, "Token price not available");
             require(
                 stopLoss[i] < entryPrice,
@@ -169,7 +206,7 @@ contract PoolFactory {
         uint256[2] memory values;
         for (uint256 i = 0; i < 2; i++) {
             values[i] =
-                (amounts[i] * getTokenPrice(tokens[i])) /
+                (amounts[i] * tokenPrices[tokens[i]]) /
                 10 ** IERC20Metadata(tokens[i]).decimals();
         }
         return values;
@@ -189,5 +226,10 @@ contract PoolFactory {
         address user
     ) external view returns (address[] memory) {
         return userPools[user];
+    }
+
+    function addOperator(address _newOperator) external onlyOperator {
+        operators.push(_newOperator);
+        isOperator[_newOperator] = true;
     }
 }
