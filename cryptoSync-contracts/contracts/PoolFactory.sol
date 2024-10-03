@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./Interfaces/IERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./Interfaces/IUniswap.sol";
-import "./libraries/CustomOracleLibrary.sol";
 
 import "./PoolContract.sol";
 
@@ -62,32 +62,15 @@ contract PoolFactory {
     function getOnChainPrice(
         address token
     ) public view returns (uint256 price) {
-        address tokenPoolAddress = tokenPoolAddresses[token];
-        require(tokenPoolAddress != address(0), "Pool not found");
+        // address tokenPoolAddress = tokenPoolAddresses[token];
+        // require(tokenPoolAddress != address(0), "Pool not found");
+        
+        // IUniswapV3Pool tokenPool = IUniswapV3Pool(tokenPoolAddress);
 
-        return CustomOracleLibrary.consultPrice(tokenPoolAddress, 300); // 5 minutes ago
+        // (uint160 sqrtPriceX96, , , , , , ) = tokenPool.slot0(); 
 
-        // // Set the secondsAgo array for fetching price data
-        // uint32[] memory secondsAgos = new uint32[](2);
-        // secondsAgos[0] = 0; // Current price
-        // secondsAgos[1] = 300; // Price 30 minutes ago
+        // price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * (10 ** (getDecimalOfToken(token) - getDecimalOfToken(stableCoin)));
 
-        // // Fetch the tick values from the Uniswap pool
-        // (int56[] memory tickCumulatives, ) = pool.observe(secondsAgos);
-
-        // // Calculate the tick difference
-        // int56 tickCumulativesDelta = tickCumulatives[0] - tickCumulatives[1];
-        // int24 timeWeightedAverageTick = int24(tickCumulativesDelta / 1800);
-
-        // // Convert the tick to a price ratio
-        // uint256 priceRatio = OracleLibrary.getQuoteAtTick(
-        //     timeWeightedAverageTick,
-        //     uint128(1e18), // Base amount
-        //     token,
-        //     stableCoin
-        // );
-
-        // return priceRatio;
     }
 
     function createPool(PoolParams memory params) external {
@@ -221,6 +204,10 @@ contract PoolFactory {
         }
     }
 
+    function getDecimalOfToken(address token) public view returns (uint8) {
+        return IERC20Metadata(token).decimals();
+    }
+
     function getPoolsByUser(
         address user
     ) external view returns (address[] memory) {
@@ -231,4 +218,5 @@ contract PoolFactory {
         operators.push(_newOperator);
         isOperator[_newOperator] = true;
     }
+
 }
