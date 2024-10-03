@@ -14,8 +14,10 @@
   "description": "",
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.2",
+    "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.4",
-    "tronbox": "^4.0.0"
+    "tronbox": "^4.0.0",
+    "tronweb": "^6.0.0"
   },
   "devDependencies": {
     "solc": "^0.8.6"

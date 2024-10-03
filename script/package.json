@@ -11,7 +11,6 @@
   "description": "",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "node-schedule": "^2.1.1",
     "tronweb": "^6.0.0"
   }
 }
