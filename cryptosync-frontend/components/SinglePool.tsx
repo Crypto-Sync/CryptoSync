@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
+import * as Progress from "@radix-ui/react-progress"
 import { Button } from "@/components/ui/button"
 import { CryptoPrices } from '@/lib/fetchCryptoPrices'
 import { useRouter } from 'next/navigation'
@@ -81,21 +81,21 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
     const renderPoolStatus = (status: { [key: string]: number }, isAfter: boolean = false) => (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {Object.entries(status).map(([symbol, allocation]) => (
-                <div key={symbol} className={`flex flex-col items-center justify-center rounded-lg p-3 transition-all duration-300 ${isAfter ? 'bg-green-100 shadow-md' : 'bg-gray-100'}`}>
-                    <span className="text-sm font-medium text-gray-600">{symbol}</span>
-                    <span className={`text-2xl font-bold ${isAfter ? 'text-green-600' : 'text-gray-800'}`}>{allocation}%</span>
+                <div key={symbol} className={`flex flex-col items-center justify-center rounded-lg p-3 transition-all duration-300 border border-border ${isAfter ? 'bg-green-100 shadow-md' : 'bg-background'}`}>
+                    <span className="text-sm font-medium text-muted-foreground">{symbol}</span>
+                    <span className={`text-2xl font-bold ${isAfter ? 'text-green-600' : 'text-foreground'}`}>{allocation}%</span>
                 </div>
             ))}
         </div>
     )
 
     return (
-        <div className="container min-h-screen p-8">
+        <div className="bg-background shadow-custom-strong rounded-xl container min-h-screen p-8">
             <div className=" mx-auto space-y-8">
-                <div className="flex flex-col md:flex-row justify-between items-center bg-white rounded-lg shadow-lg p-6">
+                <div className="flex flex-col md:flex-row justify-between items-center border border-border rounded-lg shadow-lg p-6">
                     <div>
-                        <h1 className="text-4xl font-bold text-gray-800 mb-2">{poolData.name}</h1>
-                        <p className="text-gray-500">Created on {poolData.createdAt}</p>
+                        <h1 className="text-4xl font-bold text-foreground mb-2">{poolData.name}</h1>
+                        <p className="text-muted-foreground">Created on {poolData.createdAt}</p>
                     </div>
                     <div className="flex space-x-4 mt-4 md:mt-0">
                         <Button onClick={handleDepositFunds} className="bg-green-500 hover:bg-green-600">
@@ -108,7 +108,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                         <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
                             <CardTitle className="text-lg font-medium">Total Balance</CardTitle>
                         </CardHeader>
@@ -120,7 +120,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                         <CardHeader className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
                             <CardTitle className="text-lg font-medium">Performance</CardTitle>
                         </CardHeader>
@@ -139,7 +139,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                         <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
                             <CardTitle className="text-lg font-medium">Last Rebalance</CardTitle>
                         </CardHeader>
@@ -151,7 +151,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                         <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-600 text-white">
                             <CardTitle className="text-lg font-medium">Created On</CardTitle>
                         </CardHeader>
@@ -164,7 +164,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                     </Card>
                 </div>
 
-                <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                     <CardHeader>
                         <CardTitle className="text-2xl font-bold">Asset Allocation</CardTitle>
                         <CardDescription>Compare initial and current allocations</CardDescription>
@@ -175,11 +175,19 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                 <div key={asset.symbol} className="space-y-2">
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium">{asset.name} ({asset.symbol})</span>
-                                        <span className="text-sm text-gray-500">${asset.currentPrice.toLocaleString()}</span>
+                                        <span className="text-sm text-foreground">${asset.currentPrice.toLocaleString()}</span>
                                     </div>
                                     <div className="flex items-center space-x-4">
-                                        <Progress value={asset.currentAllocation} className="flex-grow" />
-                                        <span className="text-sm font-medium w-12 text-right">{asset.currentAllocation}%</span>
+                                        <Progress.Root
+                                            className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
+                                            value={asset.currentAllocation}>
+                                            <Progress.Indicator
+                                                className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-400"
+                                                style={{ transform: `translateX(-${100 - asset.currentAllocation}%)` }}
+                                            />
+                                        </Progress.Root>
+
+                                        <span className="text-md text-foreground font-medium w-12 text-right">{asset.currentAllocation}%</span>
                                     </div>
                                     <div className="flex justify-between text-sm text-gray-500">
                                         <span>Initial: {asset.initialAllocation}%</span>
@@ -191,15 +199,15 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                     <CardHeader>
                         <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
                         <CardDescription>Recent activities in your pool</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
-                            <TableHeader>
-                                <TableRow>
+                            <TableHeader className='hover:bg-transparent'>
+                                <TableRow >
                                     <TableHead>Action</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Description</TableHead>
@@ -209,7 +217,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                             <TableBody>
                                 {poolData.transactions.map((tx) => (
                                     <>
-                                        <TableRow key={tx.id} className="cursor-pointer hover:bg-gray-50" onClick={() => toggleRowExpansion(tx.id)}>
+                                        <TableRow key={tx.id} className="cursor-pointer hover:bg-secondary" onClick={() => toggleRowExpansion(tx.id)}>
                                             <TableCell>
                                                 <div className="flex items-center space-x-2">
                                                     {getStatusIcon(tx.type)}
@@ -230,21 +238,21 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                         </TableRow>
                                         {expandedRows.includes(tx.id) && (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="bg-gray-50 p-4">
+                                                <TableCell colSpan={4} className="bg-background border border-border p-4">
                                                     <div className="grid grid-col-2 gap-4">
                                                         <div>
-                                                            <h5 className="font-semibold text-lg text-gray-800 mb-4">Transaction Details:</h5>
-                                                            <p className="text-sm mb-1"><span className="font-medium">Type:</span> {tx.type}</p>
-                                                            <p className="text-sm mb-1"><span className="font-medium">Date:</span> {tx.date}</p>
-                                                            <p className="text-sm mb-1"><span className="font-medium">Description:</span> {tx.description}</p>
+                                                            <h5 className="font-semibold text-lg text-muted-foreground mb-4">Transaction Details:</h5>
+                                                            <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Type:</span> {tx.type}</p>
+                                                            <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Date:</span> {tx.date}</p>
+                                                            <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Description:</span> {tx.description}</p>
                                                             {/* <p className="text-sm mb-1">
                                                                 <span className="font-medium">Tx Hash:</span>{' '}
                                                                 <a href={`https://tronscan.org/#/transaction/${tx.txHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
                                                                     {tx.txHash} <ExternalLink className="h-3 w-3 inline" />
                                                                 </a>
                                                             </p> */}
-                                                            <p className="text-sm mb-1"><span className="font-medium">Gas Fee:</span> {tx.gasFee} TRX</p>
-                                                            <p className="text-sm mb-1"><span className="font-medium">Duration:</span> {tx.duration}</p>
+                                                            <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Gas Fee:</span> {tx.gasFee} TRX</p>
+                                                            <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Duration:</span> {tx.duration}</p>
                                                             {tx.profitAmount && <p className="text-sm mb-1"><span className="font-medium">Profit Amount:</span> ${tx.profitAmount}</p>}
                                                             {tx.lossAmount && <p className="text-sm mb-1"><span className="font-medium">Loss Amount:</span> ${tx.lossAmount}</p>}
                                                             {tx.depositAmount && <p className="text-sm mb-1"><span className="font-medium">Deposit Amount:</span> ${tx.depositAmount}</p>}
@@ -252,15 +260,15 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                                             {tx.newThreshold && <p className="text-sm mb-1"><span className="font-medium">New Threshold:</span> {tx.newThreshold}%</p>}
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-semibold text-lg text-gray-800 mb-4">Pool Status Change</h4>
+                                                            <h4 className="font-semibold text-lg text-muted-foreground mb-4">Pool Status Change</h4>
                                                             <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
                                                                 <div className="flex-1 w-full">
-                                                                    <h5 className="text-sm font-medium mb-3 text-gray-600">Before:</h5>
+                                                                    <h5 className="text-sm font-medium mb-3 text-muted-foreground">Before:</h5>
                                                                     {renderPoolStatus(tx.beforeStatus)}
                                                                 </div>
                                                                 <ArrowRight className="h-8 w-8 text-gray-400 transform rotate-90 md:rotate-0" />
                                                                 <div className="flex-1 w-full">
-                                                                    <h5 className="text-sm font-medium mb-3 text-gray-600">After:</h5>
+                                                                    <h5 className="text-sm font-medium mb-3 text-muted-foreground">After:</h5>
                                                                     {renderPoolStatus(tx.afterStatus, true)}
                                                                 </div>
                                                             </div>
@@ -270,7 +278,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                                         href={`https://tronscan.org/#/transaction/${tx.txHash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="mt-6 text-sm text-blue-500 hover:text-blue-600 transition-colors duration-200 flex items-center"
+                                                        className="mt-6 text-sm text-white max-w-max px-4 py-3 rounded-lg bg-accent hover:text-blue-600 transition-colors duration-200 flex items-center"
                                                     >
                                                         View Transaction <ExternalLink className="h-4 w-4 ml-1" />
                                                     </a>

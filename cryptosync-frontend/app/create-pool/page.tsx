@@ -6,7 +6,7 @@ const CreatePool = dynamic(() => import("@/components/CreatePool"), { ssr: false
 export default async function page() {
     const prices: CryptoPrices = await fetchCryptoPrices();
     return (
-        <div className="py-20 min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="bg-background py-20 min-h-screen flex items-center justify-center">
             <CreatePool prices={prices} />
         </div>
     );

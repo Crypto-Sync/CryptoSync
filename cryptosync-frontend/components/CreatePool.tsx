@@ -96,59 +96,30 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
     };
 
     return (
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full mb-4">
+        <div className="bg-zinc-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg w-full mb-4">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <div className={`border border-${token?.color} p-1 rounded-full mr-3`}>
-                        <Image src={token?.icon} alt="token icon" className="w-8 h-8 text-white" width={100} height={100} />
+                    <div className={`border border-gray-500 dark:border-gray-200 p-1 rounded-full mr-3`}>
+                        <Image src={token?.icon} alt="token icon" className="w-8 h-8 text-foreground" width={100} height={100} />
                     </div>
                     <div>
-                        <h3 className="text-white font-semibold">{token?.name}</h3>
-                        <p className="text-gray-400 text-sm">{token?.fullName}</p>
+                        <h3 className="text-forground font-semibold">{token?.name}</h3>
+                        <p className="text-muted-foreground text-sm">{token?.fullName}</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="text-white font-semibold">{token?.balance.toFixed(4)}</p>
-                    <p className="text-gray-400 text-sm">Balance</p>
+                    <p className="text-forground font-semibold">{token?.balance.toFixed(4)}</p>
+                    <p className="text-muted-foreground text-sm">Balance</p>
                 </div>
             </div>
-
-            {/* <div className="mb-6 flex items-center">
-                <SliderPrimitive.Root
-                    value={[sliderValue]}
-                    max={100}
-                    step={0.1}
-                    orientation="horizontal"
-                    className="relative flex items-center select-none touch-none w-full h-5"
-                    onValueChange={(e) => handleSliderChange(e)}
-                >
-                    <SliderPrimitive.Track className="bg-gray-700 relative grow rounded-full h-[3px]">
-                        <SliderPrimitive.Range className="absolute h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full" />
-                    </SliderPrimitive.Track>
-                    <SliderPrimitive.Thumb className="block w-5 h-5 bg-white rounded-full shadow-lg border-2 border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-30" />
-                </SliderPrimitive.Root>
-
-                <div className="rounded-lg pl-3 flex justify-between items-center">
-                    <input
-                        type="number"
-                        value={sliderValue.toFixed(2)}
-                        onChange={handleInputChange}
-                        className="w-16 text-white bg-gray-700 rounded-md p-1 text-lg text-right focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
-                        min="0"
-                        max="100"
-                        step="1"
-                    />
-                </div>
-            </div> */}
-
             <div className="flex flex-col justify-between text-sm mb-2 mt-4">
-                <span className="text-gray-400 mb-2">Enter Amount<span className='text-gray-500 text-sm ml-2'>({token?.name})</span></span>
+                <span className="text-primary font-semibold mb-2">Enter Amount<span className='text-muted-foreground text-sm ml-2'>({token?.name})</span></span>
                 <div className='flex items-center justify-center gap-2'>
                     <input
                         type="number"
                         value={selectedAmount}
                         onChange={handleInputAmountChange}
-                        className="px-3 py-2 flex-1 text-white bg-gray-700 rounded-md p-1 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                        className="px-3 py-2 flex-1 text-foreground bg-gray-300 dark:bg-gray-700 rounded-md p-1 text-lg focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                         min={0}
                         max={token?.balance}
                         step={0.01}
@@ -157,9 +128,9 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
             </div>
 
             <div className="flex justify-start items-center text-sm">
-                <span className="text-white font-medium text-lg">
+                <span className="text-foreground font-medium text-lg">
                     {/* {remainingBalance.toFixed(4)} {token?.name} */}
-                    <span className='text-gray-500 mr-1 text-sm'>$</span>{tokenPrice ? (tokenPrice * selectedAmount).toFixed(4) : 0}
+                    <span className='text-muted-foreground mr-1 text-sm'>$</span>{tokenPrice ? (tokenPrice * selectedAmount).toFixed(4) : 0}
                 </span>
             </div>
 
@@ -167,7 +138,7 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
 
             <div className="mt-6 grid grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor={`takeProfit-${token.id}`} className="flex items-center text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor={`takeProfit-${token.id}`} className="flex items-center text-sm font-medium text-secondary-foreground mb-1">
                         Take Profit (%)
                         <InfoTooltip content="The percentage increase at which to sell for profit" />
                     </label>
@@ -177,13 +148,13 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                         value={takeProfit}
                         onChange={handleTakeProfitChange}
                         min="0"
-                        max="1000"
+                        max="100"
                         step="0.1"
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                        className="w-full px-3 py-2 bg-gray-300 dark:bg-gray-700 text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                     />
                 </div>
                 <div>
-                    <label htmlFor={`stopLoss-${token.id}`} className="flex items-center text-sm font-medium text-gray-400 mb-1">
+                    <label htmlFor={`stopLoss-${token.id}`} className="flex items-center text-sm font-medium text-secondary-foreground mb-1">
                         Stop Loss (%)
                         <InfoTooltip content="The percentage decrease at which to sell to limit losses" />
                     </label>
@@ -195,7 +166,7 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                         min="0"
                         max="100"
                         step="0.1"
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                        className="w-full px-3 py-2 bg-gray-300 dark:bg-gray-700 text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                     />
                 </div>
             </div>
@@ -213,18 +184,18 @@ function TokenSelector({ currentTokens, onTokenChange }: TokenSelectorProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                <button className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-secondary-foreground bg-gray-300 dark:bg-gray-700 rounded-md hover:bg-input focus:outline-none focus:ring-2 focus:ring-ring">
                     Select Token
                     <ChevronDown className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
                 </button>
             </DropdownMenuTrigger>
 
             <DropdownMenuPortal>
-                <DropdownMenuContent className="mt-2 w-56 rounded-md bg-gray-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <DropdownMenuContent className="mt-2 w-56 rounded-md text-foreground bg-gray-300 dark:bg-gray-800 shadow-lg ring-1 ring-primary ring-opacity-5 focus:outline-none">
                     {tokens.filter(token => !currentTokens.includes(token.id)).map((token) => (
                         <DropdownMenuItem
                             key={token.id}
-                            className="text-gray-300 hover:bg-gray-600 hover:text-white group flex items-center px-4 py-2 text-sm cursor-pointer"
+                            className="text-foreground bg-gray-700 hover:bg-gray-700 group flex items-center px-4 py-2 text-sm cursor-pointer"
                             onSelect={() => onTokenChange(token.id)}
                         >
                             <Image src={token.icon} alt="token icon" className="mr-3 h-5 w-5" aria-hidden="true" width={100} height={100} />
@@ -246,7 +217,7 @@ interface RebalancingFrequencySelectProps {
 function RebalancingFrequencySelect({ value, onChange }: RebalancingFrequencySelectProps) {
     return (
         <Select.Root value={value} onValueChange={onChange}>
-            <Select.Trigger className="w-full inline-flex items-center justify-between rounded-md px-3 py-3 text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-purple-500">
+            <Select.Trigger className="w-full inline-flex items-center justify-between rounded-md px-3 py-3 text-sm font-medium text-primary bg-input focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-purple-500">
                 <Select.Value placeholder="Select frequency" />
                 <Select.Icon>
                     <ChevronDown className="ml-2 -mr-1 h-5 w-5" />
@@ -414,11 +385,11 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
     };
 
     return (
-        <div className="bg-gray-900 p-6 rounded-xl shadow-custom-strong max-w-3xl w-full">
-            <h1 className="text-3xl font-bold text-white mb-8 mt-4 text-center">Create Pool</h1>
+        <div className="bg-background p-6 rounded-xl shadow-custom-strong max-w-3xl w-full">
+            <h1 className="text-3xl font-bold text-foreground mb-8 mt-4 text-center">Create Pool</h1>
 
             <div className="mb-6">
-                <label htmlFor="poolName" className="flex items-center text-sm font-medium text-gray-400 mb-2">
+                <label htmlFor="poolName" className="flex items-center text-sm font-medium text-muted-foreground mb-2">
                     Pool Name
                     <InfoTooltip content="Enter a unique name for your pool" />
                 </label>
@@ -427,7 +398,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                     id="poolName"
                     value={poolName}
                     onChange={(e) => setPoolName(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 bg-input text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     placeholder="Enter pool name"
                 />
             </div>
@@ -440,7 +411,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                             onTokenChange={(newTokenId) => handleTokenChange(index, newTokenId)}
                         />
                         <TokenSlider
-                            token={tokens.find((t) => t.id === tokenId)!} // Assert non-null with !
+                            token={tokens.find((t) => t.id === tokenId)!}
                             onPercentageChange={handlePercentageChange}
                             onTakeProfitChange={handleTakeProfitChange}
                             onStopLossChange={handleStopLossChange}
@@ -452,9 +423,9 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                 ))}
             </div>
 
-            <Card className="bg-gray-800 mb-6 border-none">
+            <Card className="bg-gray-100 shadow-lg dark:bg-gray-800 mb-6 border-none">
                 <CardHeader>
-                    <CardTitle className="text-xl font-normal text-white">Token Proportion</CardTitle>
+                    <CardTitle className="text-xl font-normal text-foreground">Pool Proportion</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {selectedTokens.map((tokenId) => {
@@ -465,42 +436,31 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                         return (
                             <div key={tokenId} className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-300">{token?.name}</span>
-                                    <span className="text-white">
+                                    <span className="text-foreground">{token?.name}</span>
+                                    <span className="text-primary font-medium">
                                         ${value.toFixed(2)} ({percentage.toFixed(2)}%)
                                     </span>
                                 </div>
-                                {/* <Progress value={percentage} className="h-2" /> */}
-                                {/* <Progress value={percentage} className="flex-grow mx-2 h-2 bg-black rounded-full" /> */}
-
                                 <Progress.Root
-                                    className="flex-grow mx-2 bg-gray-700 relative h-4 w-full overflow-hidden rounded-full"
+                                    className="flex-grow mx-2 bg-gray-300 dark:bg-gray-700 relative h-4 overflow-hidden rounded-full"
                                     value={percentage}>
                                     <Progress.Indicator
-                                        className="h-full w-full flex-1 transition-all bg-gray-200"
+                                        className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-200"
                                         style={{ transform: `translateX(-${100 - percentage}%)` }}
                                     />
                                 </Progress.Root>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">
+                                    <span className="text-secondary-foreground">
                                         {tokenAmounts[tokenId]?.toFixed(4) || '0.0000'} {token?.name}
                                     </span>
-                                    <div className="space-x-4">
-                                        <span className="text-green-400">
-                                            Take Profit: {takeProfitPercentages[tokenId] || 0}%
-                                        </span>
-                                        <span className="text-red-400">
-                                            Stop Loss: {stopLossPercentages[tokenId] || 0}%
-                                        </span>
-                                    </div>
                                 </div>
                             </div>
                         );
                     })}
                     <div className="mt-4 pt-4 border-t border-gray-700">
                         <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-white">Total Value</span>
-                            <span className="text-lg font-bold text-white">${totalValue.toFixed(2)}</span>
+                            <span className="text-lg font-bold text-foreground">Total Value</span>
+                            <span className="text-lg font-bold text-foreground">${totalValue.toFixed(2)}</span>
                         </div>
                     </div>
                 </CardContent>
@@ -508,7 +468,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
 
             <div className="mb-6 flex gap-4 flex-col md:flex-row">
                 <div className='flex-1'>
-                    <label htmlFor="rebalancingThreshold" className="flex items-center text-sm font-medium text-gray-400 mb-2">
+                    <label htmlFor="rebalancingThreshold" className="flex items-center text-sm font-medium text-foreground mb-2">
                         Rebalancing Threshold (%)
                         <InfoTooltip content="The percentage deviation that triggers a rebalance" />
                     </label>
@@ -520,7 +480,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                         min="0"
                         max="100"
                         step="0.1"
-                        className="w-full px-3 py-3 bg-gray-800 text-white leading-5 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-3 py-3 text-foreground bg-input leading-5 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                 </div>
                 <div className="mb-6 flex-1">
@@ -534,9 +494,6 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                     />
                 </div>
             </div>
-
-
-
             <button
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                 onClick={() => handleCreatePool()}

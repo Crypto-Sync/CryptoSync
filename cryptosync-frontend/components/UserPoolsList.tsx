@@ -5,9 +5,9 @@ import { ArrowRight, Search, TrendingUp, TrendingDown, BarChart2, RefreshCcw } f
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-// import * as Progress from '@radix-ui/react-progress';
-import { Progress } from "@/components/ui/progress"
+// import { Badge } from "@/components/ui/badge"
+import * as Progress from '@radix-ui/react-progress';
+// import { Progress } from "@/components/ui/progress"
 import { CryptoPrices } from '../lib/fetchCryptoPrices';
 // Mock data - replace with actual data fetching in a real application
 const userPools = [
@@ -94,15 +94,15 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
     return (
         <div className="p-6 rounded-xl w-full mb-4 min-h-screen p-8">
             <div className="container mx-auto">
-                <h1 className="text-4xl font-bold mb-8 text-white">My Pools</h1>
+                <h1 className="text-4xl font-bold mb-8 text-foreground">My Pools</h1>
                 <div className="mb-8">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-foreground" />
                         <Input
                             placeholder="Search pools"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 py-6 text-lg rounded-full shadow-md bg-transparent text-white"
+                            className="pl-10 py-6 text-lg rounded-full shadow-lg bg-transparent text-foreground"
                         />
                     </div>
                 </div>
@@ -170,21 +170,21 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                     {filteredPools.map((pool) => (
                         <Card key={pool.id} className="overflow-hidden transition-shadow duration-300 hover:shadow-lg flex flex-col">
-                            <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
-                                <div className="flex justify-between items-center">
+                            <CardHeader className="bg-secondary text-secondary-foreground ">
+                                <div className="flex justify-between items-center ">
                                     <CardTitle className="text-2xl font-bold">{pool.name}</CardTitle>
-                                    <Badge variant={pool.status === 'Active' ? 'outline' : 'secondary'} className="text-xs px-2 py-1">
+                                    {/* <Badge variant={pool.status === 'Active' ? 'outline' : 'secondary'} className="text-xs px-2 py-1">
                                         {pool.status}
-                                    </Badge>
+                                    </Badge> */}
                                 </div>
                             </CardHeader>
-                            <CardContent className="pt-6 flex-1">
+                            <CardContent className="pt-6 flex-1 bg-background">
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="text-sm font-medium text-gray-500">Balance</span>
+                                    <span className="text-sm font-medium text-muted-foreground">Balance</span>
                                     <span className="text-2xl font-bold">${pool.balance.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center mb-6">
-                                    <span className="text-sm font-medium text-gray-500">Performance</span>
+                                    <span className="text-sm font-medium text-muted-foreground">Performance</span>
                                     <div className={`flex items-center ${pool.performance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {pool.performance >= 0 ? <TrendingUp className="mr-1 h-5 w-5" /> : <TrendingDown className="mr-1 h-5 w-5" />}
                                         <span className="text-xl font-bold">{pool.performance >= 0 ? '+' : ''}{pool.performance}%</span>
@@ -192,29 +192,37 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                                 </div>
                                 <div className="mb-6">
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-medium text-gray-500">Asset Allocation</span>
-                                        <BarChart2 className="h-4 w-4 text-gray-400" />
+                                        <span className="text-sm font-medium text-muted-foreground">Asset Allocation</span>
+                                        <BarChart2 className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                     <div className="space-y-2">
                                         {pool.assets.map((asset) => (
                                             <div key={asset.symbol} className="flex items-center">
-                                                <span className="w-12 text-sm font-medium">{asset.symbol}</span>
-                                                <Progress value={asset.allocation} className="flex-grow mx-2" />
+                                                <span className="w-12 text-sm font-medium text-foreground">{asset.symbol}</span>
+                                                <Progress.Root
+                                                    className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
+                                                    value={asset.allocation}>
+                                                    <Progress.Indicator
+                                                        className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-400"
+                                                        style={{ transform: `translateX(-${100 - asset.allocation}%)` }}
+                                                    />
+                                                </Progress.Root>
+                                                {/* <Progress value={asset.allocation} className="flex-grow mx-2" /> */}
                                                 <span className="w-8 text-sm text-right">{asset.allocation}%</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center text-sm text-gray-500">
+                                <div className="flex justify-between items-center text-sm text-muted-foreground">
                                     <div className="flex items-center">
                                         <RefreshCcw className="mr-1 h-4 w-4" />
-                                        <span>Rebalance at <span className='text-black font-bold'>{pool.rebalanceThreshold}%</span> drift</span>
+                                        <span>Rebalance at <span className='text-foreground font-bold'>{pool.rebalanceThreshold}%</span> drift</span>
                                     </div>
                                     <span>Last: 25/09/2024</span>
                                 </div>
                             </CardContent>
-                            <CardFooter className="bg-gray-50">
-                                <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => handleViewMore(pool.id)}>
+                            <CardFooter className="bg-background">
+                                <Button className="w-full text-white bg-purple-600 hover:bg-purple-700" onClick={() => handleViewMore(pool.id)}>
                                     View Details
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
