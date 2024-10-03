@@ -3,16 +3,15 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import '@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol';
+import "./Interfaces/IUniswap.sol";
+import "./libraries/CustomOracleLibrary.sol";
 
 import "./PoolContract.sol";
 
 contract PoolFactory {
     uint256 constant MAX_BPS = 10_000;
     address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C;
-    address public immutable uniswapFactory = 0xCAC0EE410E19A12CCE8805D5374BB60200FADD03;
+    address public immutable uniswapFactory = 0xCAc0EE410E19a12ccE8805d5374Bb60200fAdd03;
 
     mapping(address => address[]) public userPools;
     mapping(address => address) public tokenPoolAddresses;
@@ -43,18 +42,18 @@ contract PoolFactory {
     }
 
     function setPoolAddresses() external onlyOperator {
-        tokenPoolAddresses[0xE1B8D3435D25ABEC5986A2DDE4E32CC193E5D2F0] = IUniswapV3Factory(uniswapFactory).getPool(
-            0xE1B8D3435D25ABEC5986A2DDE4E32CC193E5D2F0, // SYNC X address
+        tokenPoolAddresses[0xe1B8d3435d25aBEc5986A2ddE4E32cC193e5d2F0] = IUniswapV3Factory(uniswapFactory).getPool(
+            0xe1B8d3435d25aBEc5986A2ddE4E32cC193e5d2F0, // SYNC X address
             stableCoin,
             3000
         );
-        tokenPoolAddresses[0xCA319A9A1F5E0E2EACFF6455DC304096ABBEDD6B] = IUniswapV3Factory(uniswapFactory).getPool(
-            0xCA319A9A1F5E0E2EACFF6455DC304096ABBEDD6B, // SYNC Y address
+        tokenPoolAddresses[0xca319A9a1F5E0e2EAcfF6455Dc304096aBBEDd6B] = IUniswapV3Factory(uniswapFactory).getPool(
+            0xca319A9a1F5E0e2EAcfF6455Dc304096aBBEDd6B, // SYNC Y address
             stableCoin,
             3000
         );
-        tokenPoolAddresses[0xACF2A4D6A04AA8B57AB7042ADDD1EFFB8CD50833] = IUniswapV3Factory(uniswapFactory).getPool(
-            0xACF2A4D6A04AA8B57AB7042ADDD1EFFB8CD50833, // SYNC Z address
+        tokenPoolAddresses[0xaCF2a4d6a04AA8b57aB7042AdDD1eFFB8Cd50833] = IUniswapV3Factory(uniswapFactory).getPool(
+            0xaCF2a4d6a04AA8b57aB7042AdDD1eFFB8Cd50833, // SYNC Z address
             stableCoin,
             3000
         );
@@ -64,31 +63,31 @@ contract PoolFactory {
         address token
     ) public view returns (uint256 price) {
         address tokenPoolAddress = tokenPoolAddresses[token];
-        IUniswapV3Pool pool = IUniswapV3Pool(tokenPoolAddress);
+        require(tokenPoolAddress != address(0), "Pool not found");
 
-        // Set the secondsAgo array for fetching price data
-        uint32[] memory secondsAgos = new uint32[](2);
-        secondsAgos[0] = 0; // Current price
-        secondsAgos[1] = 300; // Price 30 minutes ago
+        return CustomOracleLibrary.consultPrice(tokenPoolAddress, 300); // 5 minutes ago
 
-        // Fetch the tick values from the Uniswap pool
-        (int56[] memory tickCumulatives, ) = pool.observe(secondsAgos);
+        // // Set the secondsAgo array for fetching price data
+        // uint32[] memory secondsAgos = new uint32[](2);
+        // secondsAgos[0] = 0; // Current price
+        // secondsAgos[1] = 300; // Price 30 minutes ago
 
-        // Calculate the tick difference
-        int56 tickCumulativesDelta = tickCumulatives[0] - tickCumulatives[1];
-        int24 timeWeightedAverageTick = int24(tickCumulativesDelta / 1800);
+        // // Fetch the tick values from the Uniswap pool
+        // (int56[] memory tickCumulatives, ) = pool.observe(secondsAgos);
 
-        // Convert the tick to a price ratio
-        uint256 priceRatio = OracleLibrary.getQuoteAtTick(
-            timeWeightedAverageTick,
-            uint128(1e18), // Base amount
-            token,
-            stableCoin
-        );
+        // // Calculate the tick difference
+        // int56 tickCumulativesDelta = tickCumulatives[0] - tickCumulatives[1];
+        // int24 timeWeightedAverageTick = int24(tickCumulativesDelta / 1800);
 
-        tokenPrices[token] = priceRatio;
+        // // Convert the tick to a price ratio
+        // uint256 priceRatio = OracleLibrary.getQuoteAtTick(
+        //     timeWeightedAverageTick,
+        //     uint128(1e18), // Base amount
+        //     token,
+        //     stableCoin
+        // );
 
-        return priceRatio;
+        // return priceRatio;
     }
 
     function createPool(PoolParams memory params) external {
@@ -145,8 +144,8 @@ contract PoolFactory {
             "Invalid token address"
         );
 
-        uint256 priceTokenFrom = tokenPrices[tokenFrom];
-        uint256 priceTokenTo = tokenPrices[tokenTo];
+        uint256 priceTokenFrom = getOnChainPrice(tokenFrom);
+        uint256 priceTokenTo = getOnChainPrice(tokenTo);
         require(
             priceTokenFrom > 0 && priceTokenTo > 0,
             "Token prices not available"
@@ -190,7 +189,7 @@ contract PoolFactory {
         uint256[2] memory stopLoss
     ) internal view {
         for (uint256 i = 0; i < 2; i++) {
-            uint256 entryPrice = tokenPrices[tokens[i]];
+            uint256 entryPrice = getOnChainPrice(tokens[i]);
             require(entryPrice > 0, "Token price not available");
             require(
                 stopLoss[i] < entryPrice,
@@ -206,7 +205,7 @@ contract PoolFactory {
         uint256[2] memory values;
         for (uint256 i = 0; i < 2; i++) {
             values[i] =
-                (amounts[i] * tokenPrices[tokens[i]]) /
+                (amounts[i] * getOnChainPrice(tokens[i])) /
                 10 ** IERC20Metadata(tokens[i]).decimals();
         }
         return values;
