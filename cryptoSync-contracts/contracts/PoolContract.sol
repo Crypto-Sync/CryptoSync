@@ -11,7 +11,7 @@ contract PoolContract {
 
     address[2] public tokens;
     address public owner;
-    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C; // TODO :need to change it to NILE testnet USDT address
+    address immutable stableCoin = 0xECa9bC828A3005B9a3b909f2cc5c2a54794DE05F; 
     uint256[2] public proportions;
     uint256[2] public initialTokenValues;
     uint256[2] public takeProfit;
@@ -93,10 +93,6 @@ contract PoolContract {
         });
 
         amountOut = swapRouter.exactInput(params);
-
-
-
-        // TODO : get onChain price from sunswap and call the setPrice function of Factor Contract
     }
 
 

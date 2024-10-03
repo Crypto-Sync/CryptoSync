@@ -62,14 +62,14 @@ contract PoolFactory {
     function getOnChainPrice(
         address token
     ) public view returns (uint256 price) {
-        // address tokenPoolAddress = tokenPoolAddresses[token];
-        // require(tokenPoolAddress != address(0), "Pool not found");
+        address tokenPoolAddress = tokenPoolAddresses[token];
+        require(tokenPoolAddress != address(0), "Pool not found");
         
-        // IUniswapV3Pool tokenPool = IUniswapV3Pool(tokenPoolAddress);
+        IUniswapV3Pool tokenPool = IUniswapV3Pool(tokenPoolAddress);
 
-        // (uint160 sqrtPriceX96, , , , , , ) = tokenPool.slot0(); 
+        (uint160 sqrtPriceX96, , , , , , ) = tokenPool.slot0(); 
 
-        // price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * (10 ** (getDecimalOfToken(token) - getDecimalOfToken(stableCoin)));
+        price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * (10 ** (getDecimalOfToken(token) - getDecimalOfToken(stableCoin))) / (1 << 192);
 
     }
 
