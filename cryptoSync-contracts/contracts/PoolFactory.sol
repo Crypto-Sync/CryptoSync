@@ -10,7 +10,7 @@ import "./PoolContract.sol";
 
 contract PoolFactory {
     uint256 constant MAX_BPS = 10_000;
-    address immutable stableCoin = 0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C;
+    address immutable stableCoin = 0xECa9bC828A3005B9a3b909f2cc5c2a54794DE05F;
     address public immutable uniswapFactory = 0xCAc0EE410E19a12ccE8805d5374Bb60200fAdd03;
 
     mapping(address => address[]) public userPools;
@@ -69,8 +69,18 @@ contract PoolFactory {
 
         (uint160 sqrtPriceX96, , , , , , ) = tokenPool.slot0(); 
 
-        price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * (10 ** (getDecimalOfToken(token) - getDecimalOfToken(stableCoin))) / (1 << 192);
+        price = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) * (1e6) / (1 << 192);
+    }
 
+    function testPrice(
+         address token
+    ) public view returns (uint160 sqrtPriceX96) {
+        address tokenPoolAddress = tokenPoolAddresses[token];
+        require(tokenPoolAddress != address(0), "Pool not found");
+        
+        IUniswapV3Pool tokenPool = IUniswapV3Pool(tokenPoolAddress);
+
+        (sqrtPriceX96, , , , , , ) = tokenPool.slot0();
     }
 
     function createPool(PoolParams memory params) external {
