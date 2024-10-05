@@ -1,4 +1,4 @@
-import Tronweb, { TronWeb } from 'tronweb';
+import { TronWeb } from 'tronweb';
 import fs from 'fs';
 import dotenv from "dotenv";
 dotenv.config();
@@ -15,6 +15,7 @@ const tronWeb = new TronWeb({
   headers: { "TRON-PRO-API-KEY": process.env.TRONGRID_API_KEY },
   privateKey
 });
+console.log('tronWeb',tronWeb);
 
 const params = [
     ['TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud', 'TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq'],
