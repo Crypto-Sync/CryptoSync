@@ -1,7 +1,9 @@
 
 import Link from 'next/link'
 import { ModeToggle } from './ModeToggle'
-import ConnectWallet from './ConnectWallet'
+import dynamic from 'next/dynamic'
+
+const ConnectWallet = dynamic(() => import("@/components/ConnectWallet"), { ssr: false })
 
 export function Header() {
     return (
