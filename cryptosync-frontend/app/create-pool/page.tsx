@@ -27,10 +27,10 @@ function checkMongoConnection() {
 
 export default async function page() {
     checkMongoConnection()
-    const prices: CryptoPrices = await fetchCryptoPrices();
+    // const prices: CryptoPrices = await fetchCryptoPrices();
     return (
         <div className="bg-background py-20 min-h-screen flex items-center justify-center">
-            <CreatePool prices={prices} />
+            <CreatePool />
         </div>
     );
 }

@@ -8,14 +8,17 @@ import Image from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { TooltipArrow } from '@radix-ui/react-tooltip';
-import { CryptoPrices } from '@/lib/fetchCryptoPrices';
+// import { CryptoPrices } from '@/lib/fetchCryptoPrices';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import * as Progress from '@radix-ui/react-progress';
+import { parseEther } from 'viem'
+import { abi } from '../abis/PoolFactory.json'
 
 // Type for each token
 interface Token {
     id: string;
     name: string;
+    tokenAddress: string;
     fullName: string;
     icon: string;
     color: string;
@@ -30,9 +33,9 @@ interface RebalancingOption {
 
 // List of tokens
 const tokens: Token[] = [
-    { id: 'btc', name: 'BTC', fullName: 'Bitcoin', icon: "bitcoin.svg", color: 'bg-yellow-500', balance: 1.5 },
-    { id: 'eth', name: 'ETH', fullName: 'Ethereum', icon: "eth-icon.svg", color: 'bg-blue-500', balance: 10 },
-    { id: 'tron', name: 'TRON', fullName: 'Tron', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
+    { id: 'scx', name: 'SCX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1.5 },
+    { id: 'scy', name: 'SCY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 10 },
+    { id: 'scz', name: 'SCZ', tokenAddress: "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us", fullName: 'SyncZ', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
 ];
 
 // Rebalancing options
@@ -51,10 +54,9 @@ interface TokenSliderProps {
     onStopLossChange: (tokenId: string, percentage: number) => void;
     takeProfit: number;
     stopLoss: number;
-    prices?: CryptoPrices
 }
 
-function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLossChange, takeProfit, stopLoss, prices }: TokenSliderProps) {
+function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLossChange, takeProfit, stopLoss }: TokenSliderProps) {
     // const ethPriceInUSD: number = prices ? prices.eth : 0;
     // const [sliderValue, setSliderValue] = useState<number>(0);
     const [selectedAmount, setSelectedAmount] = useState<number>(0);
@@ -82,7 +84,7 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
         const value = Number(e.target.value)
         onStopLossChange(token.id, value)
     }
-    const tokenPrice = prices ? prices[token.id as keyof CryptoPrices] : null;
+    const tokenPrice = 1;
 
     const handleInputAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = parseFloat(e.target.value);
@@ -164,7 +166,6 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                         value={stopLoss}
                         onChange={handleStopLossChange}
                         min="0"
-                        max="100"
                         step="0.1"
                         className="w-full px-3 py-2 bg-gray-300 dark:bg-gray-700 text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                     />
@@ -273,14 +274,14 @@ function InfoTooltip({ content }: InfoTooltipProps) {
         </TooltipProvider>
     );
 }
-interface UserPoolsListProps {
-    prices: CryptoPrices;
-}
-export default function CreatePool({ prices }: UserPoolsListProps) {
-    console.log(prices)
+
+
+
+export default function CreatePool() {
+    // console.log(prices);
     const [poolName, setPoolName] = useState<string>('');
-    const [selectedTokens, setSelectedTokens] = useState<string[]>(['btc', 'eth']);
-    const [tokenPercentages, setTokenPercentages] = useState<Record<string, number>>({ "btc": 0, "eth": 0 });
+    const [selectedTokens, setSelectedTokens] = useState<string[]>(['scx', 'scy']);
+    const [tokenPercentages, setTokenPercentages] = useState<Record<string, number>>({ "scx": 0, "scy": 0 });
     const [tokenAmounts, setTokenAmounts] = useState<Record<string, number>>({});
     const [takeProfitPercentages, setTakeProfitPercentages] = useState<Record<string, number>>({})
     const [stopLossPercentages, setStopLossPercentages] = useState<Record<string, number>>({})
@@ -288,6 +289,9 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
     const [rebalancingFrequency, setRebalancingFrequency] = useState<string>('');
     const [tokenValues, setTokenValues] = useState<{ [key: string]: number }>({})
     const [totalValue, setTotalValue] = useState(0)
+
+    const [tronWeb, setTronWeb] = useState<any>(null);
+    const [userAddress, setUserAddress] = useState<string | null>(null);
 
     const handleTokenChange = (index: number, newTokenId: string) => {
         setSelectedTokens((prev) => {
@@ -350,7 +354,8 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
 
         selectedTokens.forEach((tokenId) => {
             const amount = tokenAmounts[tokenId] || 0
-            const price = prices[tokenId as keyof CryptoPrices] || 0
+            const price = 1
+            // const price = prices[tokenId as keyof CryptoPrices] || 0
             const value = amount * price
             values[tokenId] = value
             total += value
@@ -358,21 +363,47 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
 
         setTokenValues(values)
         setTotalValue(total)
-    }, [selectedTokens, tokenAmounts, prices])
+    }, [selectedTokens, tokenAmounts])
+
+    useEffect(() => {
+        const initTronWeb = async () => {
+            if (typeof window !== 'undefined' && window.tronWeb) {
+                const tronInstance = window.tronWeb;
+
+                // Check if defaultAddress and base58 exist
+                const defaultAddress = tronInstance?.defaultAddress?.base58;
+
+                if (defaultAddress) {
+                    setTronWeb(tronInstance);
+                    setUserAddress(defaultAddress);
+                } else {
+                    console.error('No default address found in TronLink.');
+                }
+            } else {
+                console.error('TronLink is not installed or not logged in.');
+            }
+        };
+
+        initTronWeb();
+    }, []);
+
 
     interface CreatePoolData {
+        poolAddress: string | null;
         userWalletAddress: string;
         poolName: string;
-        totalValue: number;
-        tokens: Array<{ symbol: string; amount: number; proportion: number }>;
+        totalValue: number | null;
+        tokens: Array<{ symbol: string | undefined; amount: number | string; proportion: number }>;
         rebalancingThreshold: number;
         rebalancingFrequency: string;
         takeProfitPercentage?: number;
         stopLossPercentage?: number;
     }
 
+
     async function createPool(data: CreatePoolData) {
-        console.log(data)
+
+        console.log("data", data);
         const response = await fetch('/api/pools/create', {
             method: 'POST',
             headers: {
@@ -385,7 +416,7 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
         console.log(result);
     }
 
-    const handleCreatePool = () => {
+    const handleCreatePool = async () => {
         const tokenProportions = selectedTokens.map(tokenId => {
             const value = tokenValues[tokenId] || 0;
             const percentage = totalValue > 0 ? (value / totalValue) * 100 : 0;
@@ -393,8 +424,9 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                 tokenId,
                 name: tokens.find(t => t.id === tokenId)?.name,
                 value: value,
-                percentage: percentage,
-                amount: tokenAmounts[tokenId] || '0.0000',
+                tokenAddress: tokens.find(t => t.id === tokenId)?.tokenAddress,
+                percentage: percentage.toFixed(2),
+                amount: (tokenAmounts[tokenId] || '0.0000'),
                 takeProfit: takeProfitPercentages[tokenId] || 0,
                 stopLoss: stopLossPercentages[tokenId] || 0
             };
@@ -408,19 +440,142 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
             rebalancingFrequency,
         });
 
+        if (!tronWeb || !userAddress) {
+            console.error('TronWeb is not initialized or no user is connected');
+            return;
+        }
+
+        const poolFactoryAddress = 'TAdRkJmETfaQDwkq1VADnz1qU7JW9Ej7nf';
+        const factoryContract = tronWeb.contract(abi, poolFactoryAddress);
+
+
+        let rebalancingInterval: string;
+        switch (rebalancingFrequency.toLowerCase()) {
+            case 'daily':
+                rebalancingInterval = (86400).toString();
+                break;
+            case 'weekly':
+                rebalancingInterval = (604800).toString();
+                break;
+            case '1 hour':
+                rebalancingInterval = (3600).toString();
+                break;
+            case 'monthly':
+                rebalancingInterval = (265200).toString();
+                break;
+            default:
+                throw new Error('Unsupported rebalancing frequency');
+        }
+
+        const params = [
+            [tokenProportions[0].tokenAddress, tokenProportions[1].tokenAddress],
+            [parseEther(tokenProportions[0].amount.toString()).toString(), parseEther(tokenProportions[1].amount.toString()).toString()],
+            [(parseFloat(tokenProportions[0].percentage) * 100).toFixed(0), (parseFloat(tokenProportions[1].percentage) * 100).toFixed(0)],
+            (rebalancingThreshold * 100).toString(),
+            [tokenProportions[0].takeProfit * 100, tokenProportions[1].takeProfit * 100],
+            [tokenProportions[0].stopLoss * 10 ** 6, tokenProportions[1].stopLoss * 10 ** 6],
+            rebalancingInterval
+        ];
+
+
+        try {
+
+            // Trigger token approvals (user must approve tokens before pool creation)
+            // for (const tokenAddress of params[0]) {
+
+            // const tokenContract = await tronWeb.contract().at(tokenAddress);
+
+            // const allowance = await tokenContract.allowance(userAddress, poolFactoryAddress).call();
+            // const requiredAmount = params[1][0];
+
+            //     await tokenContract.approve(
+            //         poolFactoryAddress,
+            //         '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
+            //     ).send({
+            //         from: userAddress
+            //     });
+            // }
+            // console.log('poolFactoryContract', poolFactoryContract);
+            console.log('userAddress', userAddress);
+            console.log('params', params);
+            // Now create the pool
+
+            console.log('paramssss', params);
+            // const tx = await factoryContract.createPool(params).send({
+            //     feeLimit: 1000 * 1e6, // Transaction fee limit
+            //     callValue: 0, // No TRX to send with this call
+            //     from: userAddress // User pays gas
+            // });
+
+        } catch (error) {
+            console.error('Error creating pool:', error);
+        }
+        const getPoolAddress = async () => {
+            try {
+
+                const poolAddresses = await factoryContract.getPoolsByUser(userAddress).call();
+
+                const base58Addresses: string[] = poolAddresses.map((addr: string) => tronWeb.address.fromHex(addr));
+
+                if (base58Addresses.length > 0) {
+                    return base58Addresses[poolAddresses.length - 1]; // Get the latest pool address
+                } else {
+                    throw new Error('No pools found for this user.');
+                }
+            } catch (error) {
+                return null;
+            }
+        }
+
+        const getPoolValue = async () => {
+            try {
+                // Assuming params[0] is an array of two tokens [tokenA, tokenB]
+                const tokens = params[0];
+                console.log("tokens", tokens);
+
+                // Fetch the price for the first token (assuming BigNumber is returned)
+                const priceTokenA = await factoryContract.getOnChainPrice(tokens[0]).call();
+                console.log('priceTokenA', parseInt(priceTokenA, 10));
+
+                // Fetch the price for the second token (assuming BigNumber is returned)
+                const priceTokenB = await factoryContract.getOnChainPrice(tokens[1]).call();
+                console.log('priceTokenb', parseInt(priceTokenB, 10));
+
+
+                const amountTokenA = Number(tokenProportions[0].amount);
+                const amountTokenB = Number(tokenProportions[1].amount);
+
+                // Calculate total value: price * amount for both tokens
+                const totalValue = (parseInt(priceTokenA, 10) * amountTokenA) + (parseInt(priceTokenB, 10) * amountTokenB);
+
+                // Convert the result to string to return
+                return totalValue;
+            } catch (error) {
+                console.error("Error fetching pool value:", error);
+                return null;
+            }
+        };
+
+        const poolAddress = await getPoolAddress();
+        console.log(poolAddress);
+        const valueOfPool = await getPoolValue();
+        console.log('valueOfPool', valueOfPool);
+
         createPool({
-            userWalletAddress: '0x1234567890123456789012345678901234567890',
-            poolName: 'My second Pool',
-            totalValue: 10000,
+            poolAddress,//need to change this becasue it is stroing hash of address
+            userWalletAddress: userAddress,
+            poolName: 'MY_POOL',
+            totalValue: valueOfPool,
             tokens: [
-                { symbol: 'ETH', amount: 2, proportion: 0.6 },
-                { symbol: 'BTC', amount: 0.05, proportion: 0.4 }
+                { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage) },
+                { symbol: tokenProportions[1].name, amount: tokenProportions[1].amount, proportion: parseFloat(tokenProportions[1].percentage) }
             ],
-            rebalancingThreshold: 10,
-            rebalancingFrequency: 'monthly',
+            rebalancingThreshold,
+            rebalancingFrequency: rebalancingInterval,
             takeProfitPercentage: 30,
             stopLossPercentage: 5
         });
+
     };
 
     return (
@@ -455,7 +610,6 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
                             onStopLossChange={handleStopLossChange}
                             takeProfit={takeProfitPercentages[tokenId] || 0}
                             stopLoss={stopLossPercentages[tokenId] || 0}
-                            prices={prices}
                         />
                     </div>
                 ))}
