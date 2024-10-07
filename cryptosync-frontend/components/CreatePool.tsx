@@ -360,6 +360,31 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
         setTotalValue(total)
     }, [selectedTokens, tokenAmounts, prices])
 
+    interface CreatePoolData {
+        userWalletAddress: string;
+        poolName: string;
+        totalValue: number;
+        tokens: Array<{ symbol: string; amount: number; proportion: number }>;
+        rebalancingThreshold: number;
+        rebalancingFrequency: string;
+        takeProfitPercentage?: number;
+        stopLossPercentage?: number;
+    }
+
+    async function createPool(data: CreatePoolData) {
+        console.log(data)
+        const response = await fetch('/api/pools/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+        console.log(result);
+    }
+
     const handleCreatePool = () => {
         const tokenProportions = selectedTokens.map(tokenId => {
             const value = tokenValues[tokenId] || 0;
@@ -382,12 +407,25 @@ export default function CreatePool({ prices }: UserPoolsListProps) {
             rebalancingThreshold,
             rebalancingFrequency,
         });
+
+        createPool({
+            userWalletAddress: '0x1234567890123456789012345678901234567890',
+            poolName: 'My second Pool',
+            totalValue: 10000,
+            tokens: [
+                { symbol: 'ETH', amount: 2, proportion: 0.6 },
+                { symbol: 'BTC', amount: 0.05, proportion: 0.4 }
+            ],
+            rebalancingThreshold: 10,
+            rebalancingFrequency: 'monthly',
+            takeProfitPercentage: 30,
+            stopLossPercentage: 5
+        });
     };
 
     return (
         <div className="bg-background p-6 rounded-xl shadow-custom-strong max-w-3xl w-full">
             <h1 className="text-3xl font-bold text-foreground mb-8 mt-4 text-center">Create Pool</h1>
-
             <div className="mb-6">
                 <label htmlFor="poolName" className="flex items-center text-sm font-medium text-muted-foreground mb-2">
                     Pool Name

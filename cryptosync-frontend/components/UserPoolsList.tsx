@@ -76,7 +76,23 @@ const userPools = [
         rebalanceThreshold: 0
     },
 ]
+async function fetchUserPools(walletAddress: string) {
+    try {
+        const response = await fetch(`/api/pools/get-user-pools?walletAddress=${walletAddress}`);
+        const data = await response.json();
 
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to fetch pools');
+        }
+
+        console.log('Fetched pools for user:', data);
+    } catch (error) {
+        console.error('Error fetching user pools:', error);
+    }
+}
+
+// Example usage
+fetchUserPools('0x1234567890123456789012345678901234567890');
 const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
     console.log("Pricesss", prices)
     const [searchTerm, setSearchTerm] = useState('')
