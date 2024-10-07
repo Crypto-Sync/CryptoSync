@@ -1,13 +1,13 @@
 import mongoose, { Document, Model } from "mongoose";
 
 export interface IUser extends Document {
-  walletAddress: string;
+  userWalletAddress: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const UserSchema = new mongoose.Schema<IUser>({
-  walletAddress: { type: String, required: true, unique: true },
+  userWalletAddress: { type: String, required: true, unique: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
