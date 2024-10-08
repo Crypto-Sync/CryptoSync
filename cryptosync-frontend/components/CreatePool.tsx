@@ -11,8 +11,8 @@ import { TooltipArrow } from '@radix-ui/react-tooltip';
 // import { CryptoPrices } from '@/lib/fetchCryptoPrices';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import * as Progress from '@radix-ui/react-progress';
-import { parseEther } from 'viem'
-
+import { formatEther, parseEther } from 'viem'
+import { abi } from '../abis/PoolFactory.json'
 
 // Type for each token
 interface Token {
@@ -33,9 +33,9 @@ interface RebalancingOption {
 
 // List of tokens
 const tokens: Token[] = [
-    { id: 'scx', name: 'SCX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1.5 },
-    { id: 'scy', name: 'SCY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 10 },
-    { id: 'scz', name: 'SCZ', tokenAddress: "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us", fullName: 'SyncZ', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
+    { id: 'syx', name: 'SYX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1000 },
+    { id: 'syy', name: 'SYY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
+    { id: 'syz', name: 'SYZ', tokenAddress: "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us", fullName: 'SyncZ', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
 ];
 
 // Rebalancing options
@@ -84,7 +84,7 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
         const value = Number(e.target.value)
         onStopLossChange(token.id, value)
     }
-    const tokenPrice = 1;
+    const tokenPrice = 2;
 
     const handleInputAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = parseFloat(e.target.value);
@@ -157,8 +157,8 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                 </div>
                 <div>
                     <label htmlFor={`stopLoss-${token.id}`} className="flex items-center text-sm font-medium text-secondary-foreground mb-1">
-                        Stop Loss (%)
-                        <InfoTooltip content="The percentage decrease at which to sell to limit losses" />
+                        Stop Loss (in USD)
+                        <InfoTooltip content="At this price all your tokens will be sold out for handle loss" />
                     </label>
                     <input
                         type="number"
@@ -280,8 +280,8 @@ function InfoTooltip({ content }: InfoTooltipProps) {
 export default function CreatePool() {
     // console.log(prices);
     const [poolName, setPoolName] = useState<string>('');
-    const [selectedTokens, setSelectedTokens] = useState<string[]>(['scx', 'scy']);
-    const [tokenPercentages, setTokenPercentages] = useState<Record<string, number>>({ "scx": 0, "scy": 0 });
+    const [selectedTokens, setSelectedTokens] = useState<string[]>(['syx', 'syy']);
+    const [tokenPercentages, setTokenPercentages] = useState<Record<string, number>>({ "syx": 0, "syy": 0 });
     const [tokenAmounts, setTokenAmounts] = useState<Record<string, number>>({});
     const [takeProfitPercentages, setTakeProfitPercentages] = useState<Record<string, number>>({})
     const [stopLossPercentages, setStopLossPercentages] = useState<Record<string, number>>({})
@@ -290,6 +290,7 @@ export default function CreatePool() {
     const [tokenValues, setTokenValues] = useState<{ [key: string]: number }>({})
     const [totalValue, setTotalValue] = useState(0)
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tronWeb, setTronWeb] = useState<any>(null);
     const [userAddress, setUserAddress] = useState<string | null>(null);
 
@@ -426,7 +427,7 @@ export default function CreatePool() {
                 value: value,
                 tokenAddress: tokens.find(t => t.id === tokenId)?.tokenAddress,
                 percentage: percentage.toFixed(2),
-                amount: (tokenAmounts[tokenId] || '0.0000'),
+                amount: (tokenAmounts[tokenId] || 0),
                 takeProfit: takeProfitPercentages[tokenId] || 0,
                 stopLoss: stopLossPercentages[tokenId] || 0
             };
@@ -445,9 +446,9 @@ export default function CreatePool() {
             return;
         }
 
-        const poolFactoryAddress = 'TAdRkJmETfaQDwkq1VADnz1qU7JW9Ej7nf';
-        // const factoryContract = await tronWeb.contract(abi, poolFactoryAddress);
-        const factoryContract = await tronWeb.contract().at(poolFactoryAddress);
+        const poolFactoryAddress = 'THBfkWjoJqY7appwUmtHrNkAHhZR46Cj5n';
+        const factoryContract = await tronWeb.contract(abi, poolFactoryAddress);
+        // const factoryContract = await tronWeb.contract().at(poolFactoryAddress);
 
 
 
@@ -486,33 +487,51 @@ export default function CreatePool() {
         try {
 
             // Trigger token approvals (user must approve tokens before pool creation)
-            for (const tokenAddress of params[0]) {
-
+            for (let i = 0; i < params[0].length; i++) {
+                const tokenAddress = params[0][i];  // Get the current token address
                 const tokenContract = await tronWeb.contract().at(tokenAddress);
+
+                // Fetch the balance of the user for the current token
                 const balance = await tokenContract.balanceOf(userAddress).call();
-                console.log('balance', balance);
+                console.log(`balance of token ${i}`, balance);
 
+                // Fetch the allowance of the user for the current token
                 const allowance = await tokenContract.allowance(userAddress, poolFactoryAddress).call();
-                const requiredAmount = params[1][0];
 
-                // await tokenContract.approve(
-                //     poolFactoryAddress,
-                //     '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
-                // ).send({
-                //     from: userAddress
-                // });
+                // Convert allowance to a number for comparison
+                const allowanceInNumber = Number(formatEther(allowance));
+                console.log(`allowance of token ${i}`, allowanceInNumber);
+
+                const requiredAmount = parseFloat((tokenProportions[i].amount).toString());
+                console.log(`requiredAmount of token ${i}`, requiredAmount);
+
+                // Check if the allowance is less than the required amount
+                if (allowanceInNumber < requiredAmount) {
+                    console.log(`Allowance is less than required. Approving max allowance for token: ${tokenAddress}`);
+
+                    // Approve max allowance if allowance is not enough
+                    await tokenContract.approve(
+                        poolFactoryAddress,
+                        '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
+                    ).send({
+                        from: userAddress
+                    });
+
+                    console.log(`Max allowance approved for token: ${tokenAddress}`);
+                } else {
+                    console.log(`Sufficient allowance already set for token: ${tokenAddress}`);
+                }
             }
-            // console.log('poolFactoryContract', poolFactoryContract);
+
             console.log('userAddress', userAddress);
             console.log('params in contract', params);
             // Now create the pool
-
-            console.log('paramssss', params);
-            // const tx = await factoryContract.createPool(params).send({
-            //     feeLimit: 1000 * 1e6, // Transaction fee limit
-            //     callValue: 0, // No TRX to send with this call
-            //     from: userAddress // User pays gas
-            // });
+            const tx = await factoryContract.createPool(params).send({
+                feeLimit: 1000 * 1e6, // Transaction fee limit
+                callValue: 0, // No TRX to send with this call
+                from: userAddress // User pays gas
+            });
+            console.log(tx)
 
         } catch (error) {
             console.error('Error creating pool:', error);
@@ -571,7 +590,7 @@ export default function CreatePool() {
         createPool({
             poolAddress,//need to change this becasue it is stroing hash of address
             userWalletAddress: userAddress,
-            poolName: 'MY_POOL',
+            poolName: poolName,
             totalValue: valueOfPool,
             tokens: [
                 { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage) },

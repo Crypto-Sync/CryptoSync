@@ -56,11 +56,9 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
     });
     const { address } = useWallet();
 
-    // const [userAddress, setUserAddress] = useState<string | null>(address ? address : "");
     useEffect(() => {
         if (address) {
-            // setUserAddress(address)
-            fetchUserPools("TYZGL81XhUUmke5RHfX1waTkuqy6tVo8SA");
+            fetchUserPools(address);
         }
     }, [address])
 
@@ -80,8 +78,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
             // Call the isOperator function
             console.log(poolAddress)
 
-            // const PoolContract = await tronWeb.contract().at("TQ9CL6P84NuJ7AyFyWFnRcUDqyZxraScVd");
-            const PoolContract = await tronWeb.contract(abi, "TFDktgjSJHpBqoaWnRK7LrnbMcTE2p8wKm");
+            const PoolContract = await tronWeb.contract(abi, poolAddress);
             console.log(await PoolContract)
             const result = await PoolContract.getTokenBalanceInUSD().call();
 
@@ -123,8 +120,6 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
         }
     }
 
-
-    // fetchUserPools('0x1234567890123456789012345678901234567890');
 
     const handleViewMore = (poolId: string) => {
         // In a real application, this would navigate to the single pool page
