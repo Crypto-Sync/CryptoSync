@@ -11,6 +11,9 @@ import * as Progress from '@radix-ui/react-progress';
 import { CryptoPrices } from '../lib/fetchCryptoPrices';
 import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks'
 import Link from 'next/link'
+import { abi } from '@/abis/PoolContract.json'
+import { TronWeb } from "tronweb"
+
 
 
 interface Token {
@@ -34,6 +37,8 @@ interface Pool {
     updatedAt: string;
     __v: number;
     poolAddress: string;
+    poolBalanceInUSD?: number;
+    currentTokenProportion?: bigint[];
 }
 
 // Example usage
@@ -42,8 +47,13 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
     const [searchTerm, setSearchTerm] = useState('')
     const [userPools, setUserPools] = useState<Pool[]>([])
     const [filteredPools, setFilteredPools] = useState<Pool[]>([])
-
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // const [tronWeb, setTronWeb] = useState<any>();
+    const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+    const tronWeb = new TronWeb({
+        fullHost: 'https://nile.trongrid.io',
+        privateKey
+    });
     const { address } = useWallet();
 
     // const [userAddress, setUserAddress] = useState<string | null>(address ? address : "");
@@ -61,6 +71,35 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
 
     }, [searchTerm])
 
+
+
+
+    // const tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
+    async function getTokenBalanceInUSDtry(poolAddress: string) {
+        try {
+            // Call the isOperator function
+            console.log(poolAddress)
+
+            // const PoolContract = await tronWeb.contract().at("TQ9CL6P84NuJ7AyFyWFnRcUDqyZxraScVd");
+            const PoolContract = await tronWeb.contract(abi, "TFDktgjSJHpBqoaWnRK7LrnbMcTE2p8wKm");
+            console.log(await PoolContract)
+            const result = await PoolContract.getTokenBalanceInUSD().call();
+
+            // result contains totalValueInUSD and valueProportions
+            const totalValueInUSD = result.totalValueInUSD;
+            const valueProportions = result.valueProportions;
+
+            console.log(`Total Value in USD: ${tronWeb.toDecimal(totalValueInUSD)}`);
+            console.log(`Value Proportions: ${valueProportions}`);
+
+            return { totalValue: tronWeb.toDecimal(totalValueInUSD), tokenProportion: valueProportions };
+
+            // console.log(`Is ${address} an operator?`, result);
+        } catch (error) {
+            console.error("Error calling getTokenBalanceInUSD:", error);
+        }
+    }
+
     async function fetchUserPools(walletAddress: string) {
         try {
             const response = await fetch(`/api/pools/get-user-pools?walletAddress=${walletAddress}`);
@@ -69,8 +108,15 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to fetch pools');
             }
-            setUserPools(data);
-            setFilteredPools(data);
+
+            const updatedPools = await Promise.all(data.map(async (pool: Pool) => {
+                const poolBalanceInUSD = await getTokenBalanceInUSDtry(pool.poolAddress);
+                const totalValue = poolBalanceInUSD?.totalValue ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
+                return { ...pool, poolBalanceInUSD: totalValue, currentTokenProportion: poolBalanceInUSD?.tokenProportion }; // Return a new object with `poolBalanceInUSD` added
+            }));
+            console.log(updatedPools)
+            setUserPools(updatedPools);
+            setFilteredPools(updatedPools);
             console.log('Fetched pools for user:', data);
         } catch (error) {
             console.error('Error fetching user pools:', error);
@@ -85,6 +131,9 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
         console.log(`Navigating to pool ${poolId}`)
         // Example: router.push(`/pools/${poolId}`)
     }
+
+
+
 
     return (
         <div className="p-6 rounded-xl w-full mb-4 min-h-screen p-8">
@@ -106,7 +155,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
 
                     {filteredPools.length > 0 && filteredPools.map((pool) => (
-                        <Link href="/pool/" key={pool._id}>
+                        <Link href={`/pool/${pool.poolAddress}`} key={pool._id}>
                             <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-lg flex flex-col">
                                 <CardHeader className="bg-secondary text-secondary-foreground ">
                                     <div className="flex justify-between items-center ">
@@ -119,7 +168,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                                 <CardContent className="pt-6 flex-1 bg-background">
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="text-sm font-medium text-muted-foreground">Balance</span>
-                                        {/* <span className="text-2xl font-bold">${pool.balance.toLocaleString()}</span> */}
+                                        <span className="text-2xl font-bold">${pool.poolBalanceInUSD}</span>
                                     </div>
                                     <div className="flex justify-between items-center mb-6">
                                         <span className="text-sm font-medium text-muted-foreground">Performance</span>
@@ -139,14 +188,22 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                                                     <span className="w-12 text-sm font-medium text-foreground">{asset.symbol}</span>
                                                     <Progress.Root
                                                         className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
-                                                        value={asset.proportion}>
+                                                        value={pool.currentTokenProportion
+                                                            ? Number(pool.currentTokenProportion[0]) / 100
+                                                            : 0}>
                                                         <Progress.Indicator
                                                             className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-400"
-                                                            style={{ transform: `translateX(-${100 - asset.proportion}%)` }}
+                                                            style={{
+                                                                transform: `translateX(-${100 - (pool.currentTokenProportion
+                                                                    ? Number(pool.currentTokenProportion[0]) / 100
+                                                                    : 0)}%)`
+                                                            }}
                                                         />
                                                     </Progress.Root>
                                                     {/* <Progress value={asset.allocation} className="flex-grow mx-2" /> */}
-                                                    <span className="w-8 text-sm text-right">{asset.proportion}%</span>
+                                                    <span className="w-8 text-sm text-right">{(pool.currentTokenProportion
+                                                        ? Number(pool.currentTokenProportion[0]) / 100
+                                                        : 0)}%</span>
                                                 </div>
                                             ))}
                                         </div>

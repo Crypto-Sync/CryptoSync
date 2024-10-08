@@ -12,7 +12,7 @@ import { TooltipArrow } from '@radix-ui/react-tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import * as Progress from '@radix-ui/react-progress';
 import { parseEther } from 'viem'
-import { abi } from '../abis/PoolFactory.json'
+
 
 // Type for each token
 interface Token {
@@ -453,22 +453,22 @@ export default function CreatePool() {
 
 
         let rebalancingInterval: string;
-        console.log("rebalancingFrequency.toLowerCase()",rebalancingFrequency.toLowerCase());
+        console.log("rebalancingFrequency.toLowerCase()", rebalancingFrequency.toLowerCase());
         switch (rebalancingFrequency.toLowerCase()) {
-            case 'daily':
-                rebalancingInterval = (86400).toString();
-                break;
-            case 'weekly':
-                rebalancingInterval = (604800).toString();
-                break;
-            case '1hour':
-                rebalancingInterval = (3600).toString();
-                break;
-            case 'monthly':
-                rebalancingInterval = (265200).toString();
-                break;
-            default:
-                throw new Error('Unsupported rebalancing frequency');
+        case 'daily':
+            rebalancingInterval = (86400).toString();
+            break;
+        case 'weekly':
+            rebalancingInterval = (604800).toString();
+            break;
+        case '1hour':
+            rebalancingInterval = (3600).toString();
+            break;
+        case 'monthly':
+            rebalancingInterval = (265200).toString();
+            break;
+        default:
+            throw new Error('Unsupported rebalancing frequency');
         }
 
 
