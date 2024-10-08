@@ -1,14 +1,18 @@
-require('dotenv').config();
-const TronWeb = require('tronweb');
-const fetch = require('node-fetch');
-const axios = require('axios');
+import { TronWeb } from 'tronweb';
+import fs from 'fs';
+import poolContractABI from '../cryptosync-frontend/abis/poolContract.json' assert { type: 'json' };
+import dotenv from "dotenv";
+import axios from 'axios';
+
+dotenv.config();
 
 const tronWeb = new TronWeb({
-  fullHost: process.env.FULL_NODE || 'https://api.trongrid.io',
-  privateKey: process.env.PRIVATE_KEY,
+    fullHost: 'https://nile.trongrid.io',
+    privateKey: process.env.PRIVATE_KEY,
 });
 
-const poolABI = require('../cryptosync-frontend/artifacts/poolContract.json').abi;
+const poolABI = poolContractABI.abi;
+
 
 // Function to fetch all pools from the MongoDB API
 async function getAllPools() {
@@ -33,6 +37,11 @@ async function checkAndRebalancePools() {
 
     // Process pools one by one
     for (const pool of pools) {
+
+      if(pool.poolAddress == null || pool.rebalancingFrequency != '120') {
+        continue;
+      } 
+      // console.log("Pool in checkAndRebalance", pool);
       await checkAndRebalance(pool);
     }
 
@@ -44,6 +53,7 @@ async function checkAndRebalancePools() {
 // Function to check and rebalance a single pool
 async function checkAndRebalance(pool) {
   try {
+    console.log("in CheckAndRebalance");
     const poolContract = await tronWeb.contract(poolABI, pool.poolAddress);
 
     // Fetch timePeriod and lastChecked
@@ -56,14 +66,20 @@ async function checkAndRebalance(pool) {
     const currentTime = Math.floor(Date.now() / 1000);
 
     // Check if rebalance is due
-    if (currentTime >= lastChecked + timePeriod) {
+    // if (currentTime >= lastChecked + timePeriod) {
       console.log(`Rebalancing pool ${pool.poolAddress}`);
 
       // Fetch pool tokens
-      const tokens = await poolContract.getTokens().call();
+      const token0 = await poolContract.tokens(0).call();
+      const token1 = await poolContract.tokens(1).call();
+
+      // Combine the tokens into an array
+      const tokens = [token0, token1];
 
       // Fetch before status
       const beforeStatus = await getPoolStatus(pool.poolAddress, tokens);
+
+      console.log("beforeStatus : ", beforeStatus);
 
       // Call rebalance function
       const tx = await poolContract.rebalance().send({
@@ -72,14 +88,15 @@ async function checkAndRebalance(pool) {
         shouldPollResponse: true
       });
 
-      console.log(`Rebalanced pool ${pool.poolAddress}: ${tx}`);
+      // console.log(`Rebalanced pool ${pool.poolAddress}: ${tx}`);
       
       // Fetch after status
       const afterStatus = await getPoolStatus(pool.poolAddress, tokens);
+      console.log("afterStatus : ", afterStatus);
 
        // Fetch the event from the transaction
        const events = await tronWeb.trx.getTransactionInfo(tx);
-       let action = 'unknown';
+       let action = 'rebalance'; //change later
        if (events && events.log && events.log.length > 0) {
         const eventLog = events.log[0];
         const eventTopics = eventLog.topics;
@@ -108,9 +125,11 @@ async function checkAndRebalance(pool) {
         }
       }
 
+      console.log("Action : ", action);
+
       // POST API for after status
-      await postTransactionStatus(action, pool.poolAddress, pool.userWalletAddress, beforeStatus, afterStatus, tx);
-    }
+      await postTransactionStatus(action, pool.poolAddress, pool.userWalletAddress, beforeStatus, afterStatus, "0x1232432432");
+    // }
   } catch (error) {
     console.error(`Error processing pool ${pool.poolAddress}:`, error);
   }
@@ -145,6 +164,17 @@ async function getPoolStatus(poolAddress, tokens) {
 // Updated function to post transaction status to the API
 async function postTransactionStatus(action, poolAddress, userWalletAddress, beforeStatus, afterStatus, tx) {
   try {
+      console.log("Post request : ", {
+        type: action,
+        txHash: tx,
+        description: 'Automatic rebalancing completed',
+        tokenBefore: beforeStatus,
+        tokenAfter: afterStatus,
+        amount: 0, // Set this to the appropriate value if needed
+        userId: userWalletAddress, // Make sure to set this in your .env file
+        poolId: poolAddress
+      });
+
     const response = await axios.post('http://localhost:3000/api/pools/transactions/create', {
       type: action,
       txHash: tx,
@@ -155,7 +185,6 @@ async function postTransactionStatus(action, poolAddress, userWalletAddress, bef
       userId: userWalletAddress, // Make sure to set this in your .env file
       poolId: poolAddress,
     });
-
     if (response.status === 201) {
       console.log(`Transaction status posted for rebalance:`, response.data);
     } else {
