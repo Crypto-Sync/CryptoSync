@@ -5,6 +5,7 @@ import User, { IUser } from "@/models/User";
 interface CreatePoolRequest extends Request {
   userWalletAddress: string;
   poolName: string;
+  poolAddress: string;
   totalValue: number;
   tokens: Array<{ symbol: string; amount: number; proportion: number }>;
   rebalancingThreshold: number;
@@ -21,6 +22,7 @@ export async function POST(req: CreatePoolRequest) {
     const {
       userWalletAddress,
       poolName,
+      poolAddress,
       totalValue,
       tokens,
       rebalancingThreshold,
@@ -33,6 +35,7 @@ export async function POST(req: CreatePoolRequest) {
     if (
       !userWalletAddress ||
       !poolName ||
+      !poolAddress ||
       !totalValue ||
       !tokens ||
       !rebalancingThreshold ||
@@ -47,6 +50,7 @@ export async function POST(req: CreatePoolRequest) {
     console.log({
       userWalletAddress,
       poolName,
+      poolAddress,
       totalValue,
       tokens,
       rebalancingThreshold,
@@ -56,10 +60,10 @@ export async function POST(req: CreatePoolRequest) {
     });
     // Check if user exists, if not create a new user
     let user: IUser | null = await User.findOne({
-      walletAddress: userWalletAddress,
+      userWalletAddress: userWalletAddress,
     });
     if (!user) {
-      user = new User({ walletAddress: userWalletAddress });
+      user = new User({ userWalletAddress: userWalletAddress });
       console.log(user);
       console.log("inside adding user");
       await user.save();
@@ -68,6 +72,7 @@ export async function POST(req: CreatePoolRequest) {
     const pool: IPool = new Pool({
       userWalletAddress,
       poolName,
+      poolAddress,
       totalValue,
       tokens,
       rebalancingThreshold,

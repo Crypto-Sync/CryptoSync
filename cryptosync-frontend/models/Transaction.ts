@@ -16,8 +16,8 @@ export interface ITransaction extends Document {
   tokenBefore: Record<string, number>;
   tokenAfter: Record<string, number>;
   amount: number;
-  user: IUser["_id"];
-  pool: IPool["_id"];
+  user: IUser["userWalletAddress"];
+  pool: IPool["poolAddress"];
 }
 
 const transactionSchema: Schema = new mongoose.Schema({
@@ -58,15 +58,16 @@ const transactionSchema: Schema = new mongoose.Schema({
     default: 0,
   },
   user: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: "User",
     required: true,
   },
   pool: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: "Pool",
     required: true,
   },
+
 });
 
 const Transaction: Model<ITransaction> = mongoose.model<ITransaction>(

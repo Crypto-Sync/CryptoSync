@@ -6,8 +6,9 @@ export async function GET() {
   await dbConnect(); // Connect to the database
 
   try {
+    
     // Fetch all pools from the database
-    const pools = await Pool.find().populate("userWalletAddress"); // Populate user data if necessary
+    const pools = await Pool.find(); // Populate user data if necessary
 
     // If no pools are found, return a message
     if (pools.length === 0) {

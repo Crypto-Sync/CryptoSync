@@ -9,6 +9,7 @@ interface IToken {
 export interface IPool extends Document {
   userWalletAddress: string;
   poolName: string;
+  poolAddress: string;
   totalValue: number;
   tokens: IToken[];
   rebalancingThreshold: number;
@@ -28,6 +29,7 @@ const TokenSchema = new mongoose.Schema<IToken>({
 const PoolSchema = new mongoose.Schema<IPool>({
   userWalletAddress: { type: String, required: true, ref: "User" },
   poolName: { type: String, required: true },
+  poolAddress: { type: String, required: true },
   totalValue: { type: Number, required: true },
   tokens: [TokenSchema],
   rebalancingThreshold: { type: Number, required: true },
