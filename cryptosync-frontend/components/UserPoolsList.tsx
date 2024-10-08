@@ -60,7 +60,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
     useEffect(() => {
         if (address) {
             // setUserAddress(address)
-            fetchUserPools("TYZGL81XhUUmke5RHfX1waTkuqy6tVo8SA");
+            fetchUserPools(address);
         }
     }, [address])
 
@@ -81,7 +81,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
             console.log(poolAddress)
 
             // const PoolContract = await tronWeb.contract().at("TQ9CL6P84NuJ7AyFyWFnRcUDqyZxraScVd");
-            const PoolContract = await tronWeb.contract(abi, "TFDktgjSJHpBqoaWnRK7LrnbMcTE2p8wKm");
+            const PoolContract = await tronWeb.contract(abi, poolAddress);
             console.log(await PoolContract)
             const result = await PoolContract.getTokenBalanceInUSD().call();
 
@@ -114,7 +114,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                 const totalValue = poolBalanceInUSD?.totalValue ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
                 return { ...pool, poolBalanceInUSD: totalValue, currentTokenProportion: poolBalanceInUSD?.tokenProportion }; // Return a new object with `poolBalanceInUSD` added
             }));
-            console.log(updatedPools)
+            console.log(updatedPools);
             setUserPools(updatedPools);
             setFilteredPools(updatedPools);
             console.log('Fetched pools for user:', data);
