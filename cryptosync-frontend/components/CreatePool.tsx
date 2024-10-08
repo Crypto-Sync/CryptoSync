@@ -446,10 +446,14 @@ export default function CreatePool() {
         }
 
         const poolFactoryAddress = 'TAdRkJmETfaQDwkq1VADnz1qU7JW9Ej7nf';
-        const factoryContract = tronWeb.contract(abi, poolFactoryAddress);
+        // const factoryContract = await tronWeb.contract(abi, poolFactoryAddress);
+        const factoryContract = await tronWeb.contract().at(poolFactoryAddress);
+
+
 
 
         let rebalancingInterval: string;
+        console.log("rebalancingFrequency.toLowerCase()",rebalancingFrequency.toLowerCase());
         switch (rebalancingFrequency.toLowerCase()) {
             case 'daily':
                 rebalancingInterval = (86400).toString();
@@ -457,7 +461,7 @@ export default function CreatePool() {
             case 'weekly':
                 rebalancingInterval = (604800).toString();
                 break;
-            case '1 hour':
+            case '1hour':
                 rebalancingInterval = (3600).toString();
                 break;
             case 'monthly':
@@ -466,6 +470,7 @@ export default function CreatePool() {
             default:
                 throw new Error('Unsupported rebalancing frequency');
         }
+
 
         const params = [
             [tokenProportions[0].tokenAddress, tokenProportions[1].tokenAddress],
@@ -481,23 +486,25 @@ export default function CreatePool() {
         try {
 
             // Trigger token approvals (user must approve tokens before pool creation)
-            // for (const tokenAddress of params[0]) {
+            for (const tokenAddress of params[0]) {
 
-            // const tokenContract = await tronWeb.contract().at(tokenAddress);
+                const tokenContract = await tronWeb.contract().at(tokenAddress);
+                const balance = await tokenContract.balanceOf(userAddress).call();
+                console.log('balance', balance);
 
-            // const allowance = await tokenContract.allowance(userAddress, poolFactoryAddress).call();
-            // const requiredAmount = params[1][0];
+                const allowance = await tokenContract.allowance(userAddress, poolFactoryAddress).call();
+                const requiredAmount = params[1][0];
 
-            //     await tokenContract.approve(
-            //         poolFactoryAddress,
-            //         '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
-            //     ).send({
-            //         from: userAddress
-            //     });
-            // }
+                // await tokenContract.approve(
+                //     poolFactoryAddress,
+                //     '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
+                // ).send({
+                //     from: userAddress
+                // });
+            }
             // console.log('poolFactoryContract', poolFactoryContract);
             console.log('userAddress', userAddress);
-            console.log('params', params);
+            console.log('params in contract', params);
             // Now create the pool
 
             console.log('paramssss', params);
