@@ -63,8 +63,8 @@ export async function POST(req: CreatePoolRequest) {
       userWalletAddress: userWalletAddress,
     });
     if (!user) {
-      user = new User({ userWalletAddress: userWalletAddress });
-      console.log(user);
+      user = new User({ userWalletAddress });
+      console.log('user',user);
       console.log("inside adding user");
       await user.save();
     }
