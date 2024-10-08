@@ -33,9 +33,9 @@ interface RebalancingOption {
 
 // List of tokens
 const tokens: Token[] = [
-    { id: 'scx', name: 'SCX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1.5 },
-    { id: 'scy', name: 'SCY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 10 },
-    { id: 'scz', name: 'SCZ', tokenAddress: "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us", fullName: 'SyncZ', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
+    { id: 'syx', name: 'SYX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1.5 },
+    { id: 'syy', name: 'SYY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 10 },
+    { id: 'syz', name: 'SYZ', tokenAddress: "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us", fullName: 'SyncZ', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
 ];
 
 // Rebalancing options
@@ -280,8 +280,8 @@ function InfoTooltip({ content }: InfoTooltipProps) {
 export default function CreatePool() {
     // console.log(prices);
     const [poolName, setPoolName] = useState<string>('');
-    const [selectedTokens, setSelectedTokens] = useState<string[]>(['scx', 'scy']);
-    const [tokenPercentages, setTokenPercentages] = useState<Record<string, number>>({ "scx": 0, "scy": 0 });
+    const [selectedTokens, setSelectedTokens] = useState<string[]>(['syx', 'syy']);
+    const [tokenPercentages, setTokenPercentages] = useState<Record<string, number>>({ "syx": 0, "syy": 0 });
     const [tokenAmounts, setTokenAmounts] = useState<Record<string, number>>({});
     const [takeProfitPercentages, setTakeProfitPercentages] = useState<Record<string, number>>({})
     const [stopLossPercentages, setStopLossPercentages] = useState<Record<string, number>>({})
@@ -479,7 +479,8 @@ export default function CreatePool() {
             (rebalancingThreshold * 100).toString(),
             [tokenProportions[0].takeProfit * 100, tokenProportions[1].takeProfit * 100],
             [tokenProportions[0].stopLoss * 10 ** 6, tokenProportions[1].stopLoss * 10 ** 6],
-            rebalancingInterval
+            // rebalancingInterval
+            "30"
         ];
 
 
@@ -501,8 +502,7 @@ export default function CreatePool() {
                 const allowanceInNumber = Number(formatEther(allowance));
                 console.log(`allowance of token ${i}`, allowanceInNumber);
 
-                // Get the required amount for the current token from tokenProportions[i]
-                const requiredAmount = parseFloat((tokenProportions[i].amount).toString());  // Using dynamic index `i` for each token
+                const requiredAmount = parseFloat((tokenProportions[i].amount).toString());  
                 console.log(`requiredAmount of token ${i}`, requiredAmount);
 
                 // Check if the allowance is less than the required amount
@@ -523,16 +523,14 @@ export default function CreatePool() {
                 }
             }
 
-
-            // console.log('poolFactoryContract', poolFactoryContract);
             console.log('userAddress', userAddress);
             console.log('params in contract', params);
             // Now create the pool
-            // const tx = await factoryContract.createPool(params).send({
-            //     feeLimit: 1000 * 1e6, // Transaction fee limit
-            //     callValue: 0, // No TRX to send with this call
-            //     from: userAddress // User pays gas
-            // });
+            const tx = await factoryContract.createPool(params).send({
+                feeLimit: 1000 * 1e6, // Transaction fee limit
+                callValue: 0, // No TRX to send with this call
+                from: userAddress // User pays gas
+            });
 
         } catch (error) {
             console.error('Error creating pool:', error);
@@ -588,20 +586,21 @@ export default function CreatePool() {
         const valueOfPool = await getPoolValue();
         console.log('valueOfPool', valueOfPool);
 
-        // createPool({
-        //     poolAddress,//need to change this becasue it is stroing hash of address
-        //     userWalletAddress: userAddress,
-        //     poolName: poolName,
-        //     totalValue: valueOfPool,
-        //     tokens: [
-        //         { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage) },
-        //         { symbol: tokenProportions[1].name, amount: tokenProportions[1].amount, proportion: parseFloat(tokenProportions[1].percentage) }
-        //     ],
-        //     rebalancingThreshold,
-        //     rebalancingFrequency: rebalancingInterval,
-        //     takeProfitPercentage: 30,
-        //     stopLossPercentage: 5
-        // });
+        createPool({
+            poolAddress,//need to change this becasue it is stroing hash of address
+            userWalletAddress: userAddress,
+            poolName: poolName,
+            totalValue: valueOfPool,
+            tokens: [
+                { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage) },
+                { symbol: tokenProportions[1].name, amount: tokenProportions[1].amount, proportion: parseFloat(tokenProportions[1].percentage) }
+            ],
+            rebalancingThreshold,
+            rebalancingFrequency: "30",
+            // rebalancingFrequency: rebalancingInterval,
+            takeProfitPercentage: 30,
+            stopLossPercentage: 5
+        });
 
     };
 
