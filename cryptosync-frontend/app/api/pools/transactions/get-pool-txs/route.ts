@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     const transactions: ITransaction[] = await Transaction.find({
       pool: poolId,
     })
-      .populate("user", "walletAddress")
+      .populate("user", "userWalletAddress")
       .exec();
 
     if (!transactions || transactions.length === 0) {

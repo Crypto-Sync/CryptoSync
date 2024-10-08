@@ -7,7 +7,7 @@ export interface IUser extends Document {
 }
 
 const UserSchema = new mongoose.Schema<IUser>({
-  userWalletAddress: { type: String, required: true, unique: true },
+  userWalletAddress: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

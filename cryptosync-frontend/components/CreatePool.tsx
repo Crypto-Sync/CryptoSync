@@ -11,7 +11,7 @@ import { TooltipArrow } from '@radix-ui/react-tooltip';
 // import { CryptoPrices } from '@/lib/fetchCryptoPrices';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import * as Progress from '@radix-ui/react-progress';
-import { parseEther } from 'viem'
+import { formatEther, parseEther } from 'viem'
 import { abi } from '../abis/PoolFactory.json'
 
 // Type for each token
@@ -426,7 +426,7 @@ export default function CreatePool() {
                 value: value,
                 tokenAddress: tokens.find(t => t.id === tokenId)?.tokenAddress,
                 percentage: percentage.toFixed(2),
-                amount: (tokenAmounts[tokenId] || '0.0000'),
+                amount: (tokenAmounts[tokenId] || 0),
                 takeProfit: takeProfitPercentages[tokenId] || 0,
                 stopLoss: stopLossPercentages[tokenId] || 0
             };
@@ -445,15 +445,15 @@ export default function CreatePool() {
             return;
         }
 
-        const poolFactoryAddress = 'TAdRkJmETfaQDwkq1VADnz1qU7JW9Ej7nf';
-        // const factoryContract = await tronWeb.contract(abi, poolFactoryAddress);
-        const factoryContract = await tronWeb.contract().at(poolFactoryAddress);
+        const poolFactoryAddress = 'THBfkWjoJqY7appwUmtHrNkAHhZR46Cj5n';
+        const factoryContract = await tronWeb.contract(abi, poolFactoryAddress);
+        // const factoryContract = await tronWeb.contract().at(poolFactoryAddress);
 
 
 
 
         let rebalancingInterval: string;
-        console.log("rebalancingFrequency.toLowerCase()",rebalancingFrequency.toLowerCase());
+        console.log("rebalancingFrequency.toLowerCase()", rebalancingFrequency.toLowerCase());
         switch (rebalancingFrequency.toLowerCase()) {
             case 'daily':
                 rebalancingInterval = (86400).toString();
@@ -486,28 +486,48 @@ export default function CreatePool() {
         try {
 
             // Trigger token approvals (user must approve tokens before pool creation)
-            for (const tokenAddress of params[0]) {
-
+            for (let i = 0; i < params[0].length; i++) {
+                const tokenAddress = params[0][i];  // Get the current token address
                 const tokenContract = await tronWeb.contract().at(tokenAddress);
+
+                // Fetch the balance of the user for the current token
                 const balance = await tokenContract.balanceOf(userAddress).call();
-                console.log('balance', balance);
+                console.log(`balance of token ${i}`, balance);
 
+                // Fetch the allowance of the user for the current token
                 const allowance = await tokenContract.allowance(userAddress, poolFactoryAddress).call();
-                const requiredAmount = params[1][0];
 
-                // await tokenContract.approve(
-                //     poolFactoryAddress,
-                //     '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
-                // ).send({
-                //     from: userAddress
-                // });
+                // Convert allowance to a number for comparison
+                const allowanceInNumber = Number(formatEther(allowance));
+                console.log(`allowance of token ${i}`, allowanceInNumber);
+
+                // Get the required amount for the current token from tokenProportions[i]
+                const requiredAmount = parseFloat((tokenProportions[i].amount).toString());  // Using dynamic index `i` for each token
+                console.log(`requiredAmount of token ${i}`, requiredAmount);
+
+                // Check if the allowance is less than the required amount
+                if (allowanceInNumber < requiredAmount) {
+                    console.log(`Allowance is less than required. Approving max allowance for token: ${tokenAddress}`);
+
+                    // Approve max allowance if allowance is not enough
+                    await tokenContract.approve(
+                        poolFactoryAddress,
+                        '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
+                    ).send({
+                        from: userAddress
+                    });
+
+                    console.log(`Max allowance approved for token: ${tokenAddress}`);
+                } else {
+                    console.log(`Sufficient allowance already set for token: ${tokenAddress}`);
+                }
             }
+
+
             // console.log('poolFactoryContract', poolFactoryContract);
             console.log('userAddress', userAddress);
             console.log('params in contract', params);
             // Now create the pool
-
-            console.log('paramssss', params);
             // const tx = await factoryContract.createPool(params).send({
             //     feeLimit: 1000 * 1e6, // Transaction fee limit
             //     callValue: 0, // No TRX to send with this call
@@ -568,20 +588,20 @@ export default function CreatePool() {
         const valueOfPool = await getPoolValue();
         console.log('valueOfPool', valueOfPool);
 
-        createPool({
-            poolAddress,//need to change this becasue it is stroing hash of address
-            userWalletAddress: userAddress,
-            poolName: 'MY_POOL',
-            totalValue: valueOfPool,
-            tokens: [
-                { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage) },
-                { symbol: tokenProportions[1].name, amount: tokenProportions[1].amount, proportion: parseFloat(tokenProportions[1].percentage) }
-            ],
-            rebalancingThreshold,
-            rebalancingFrequency: rebalancingInterval,
-            takeProfitPercentage: 30,
-            stopLossPercentage: 5
-        });
+        // createPool({
+        //     poolAddress,//need to change this becasue it is stroing hash of address
+        //     userWalletAddress: userAddress,
+        //     poolName: poolName,
+        //     totalValue: valueOfPool,
+        //     tokens: [
+        //         { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage) },
+        //         { symbol: tokenProportions[1].name, amount: tokenProportions[1].amount, proportion: parseFloat(tokenProportions[1].percentage) }
+        //     ],
+        //     rebalancingThreshold,
+        //     rebalancingFrequency: rebalancingInterval,
+        //     takeProfitPercentage: 30,
+        //     stopLossPercentage: 5
+        // });
 
     };
 
