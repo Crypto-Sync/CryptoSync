@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowRight, Search, TrendingUp, TrendingDown, BarChart2, RefreshCcw } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,97 +9,175 @@ import { Button } from "@/components/ui/button"
 import * as Progress from '@radix-ui/react-progress';
 // import { Progress } from "@/components/ui/progress"
 import { CryptoPrices } from '../lib/fetchCryptoPrices';
+import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks'
+
 // Mock data - replace with actual data fetching in a real application
-const userPools = [
-    {
-        id: 1,
-        name: "Balanced Growth",
-        balance: 10500,
-        performance: 5.0,
-        lastRebalance: "2023-09-25T11:30:00Z",
-        status: "Active",
-        assets: [
-            { symbol: "BTC", allocation: 40 },
-            { symbol: "ETH", allocation: 30 },
-        ],
-        rebalanceThreshold: 5
-    },
-    {
-        id: 2,
-        name: "High Risk",
-        balance: 8000,
-        performance: -2.5,
-        lastRebalance: "2023-09-26T14:45:00Z",
-        status: "Active",
-        assets: [
-            { symbol: "BTC", allocation: 60 },
-            { symbol: "ETH", allocation: 40 }
-        ],
-        rebalanceThreshold: 10
-    },
-    {
-        id: 3,
-        name: "Stablecoin",
-        balance: 5000,
-        performance: 0.5,
-        lastRebalance: "2023-09-27T09:15:00Z",
-        status: "Paused",
-        assets: [
-            { symbol: "BTC", allocation: 40 },
-            { symbol: "ETH", allocation: 30 },
-        ],
-        rebalanceThreshold: 1
-    },
-    {
-        id: 4,
-        name: "DeFi Yield",
-        balance: 12000,
-        performance: 8.2,
-        lastRebalance: "2023-09-24T16:20:00Z",
-        status: "Active",
-        assets: [
-            { symbol: "BTC", allocation: 40 },
-            { symbol: "ETH", allocation: 30 },
-        ],
-        rebalanceThreshold: 7.5
-    },
-    {
-        id: 5,
-        name: "Bitcoin Maximalist",
-        balance: 15000,
-        performance: 3.7,
-        lastRebalance: "2023-09-23T10:00:00Z",
-        status: "Active",
-        assets: [
-            { symbol: "BTC", allocation: 100 },
-        ],
-        rebalanceThreshold: 0
-    },
-]
-async function fetchUserPools(walletAddress: string) {
-    try {
-        const response = await fetch(`/api/pools/get-user-pools?walletAddress=${walletAddress}`);
-        const data = await response.json();
+// const userPools = [
+//     {
+//         id: 1,
+//         name: "Balanced Growth",
+//         balance: 10500,
+//         performance: 5.0,
+//         lastRebalance: "2023-09-25T11:30:00Z",
+//         status: "Active",
+//         assets: [
+//             { symbol: "BTC", allocation: 40 },
+//             { symbol: "ETH", allocation: 30 },
+//         ],
+//         rebalanceThreshold: 5
+//     },
+//     {
+//         id: 2,
+//         name: "High Risk",
+//         balance: 8000,
+//         performance: -2.5,
+//         lastRebalance: "2023-09-26T14:45:00Z",
+//         status: "Active",
+//         assets: [
+//             { symbol: "BTC", allocation: 60 },
+//             { symbol: "ETH", allocation: 40 }
+//         ],
+//         rebalanceThreshold: 10
+//     },
+//     {
+//         id: 3,
+//         name: "Stablecoin",
+//         balance: 5000,
+//         performance: 0.5,
+//         lastRebalance: "2023-09-27T09:15:00Z",
+//         status: "Paused",
+//         assets: [
+//             { symbol: "BTC", allocation: 40 },
+//             { symbol: "ETH", allocation: 30 },
+//         ],
+//         rebalanceThreshold: 1
+//     },
+//     {
+//         id: 4,
+//         name: "DeFi Yield",
+//         balance: 12000,
+//         performance: 8.2,
+//         lastRebalance: "2023-09-24T16:20:00Z",
+//         status: "Active",
+//         assets: [
+//             { symbol: "BTC", allocation: 40 },
+//             { symbol: "ETH", allocation: 30 },
+//         ],
+//         rebalanceThreshold: 7.5
+//     },
+//     {
+//         id: 5,
+//         name: "Bitcoin Maximalist",
+//         balance: 15000,
+//         performance: 3.7,
+//         lastRebalance: "2023-09-23T10:00:00Z",
+//         status: "Active",
+//         assets: [
+//             { symbol: "BTC", allocation: 100 },
+//         ],
+//         rebalanceThreshold: 0
+//     },
+// ]
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to fetch pools');
-        }
+// [
+//     {
+//         "_id": "6704e87348b5f51dd0b3e86b",
+//         "userWalletAddress": "TYZGL81XhUUmke5RHfX1waTkuqy6tVo8SA",
+//         "poolName": "My First Pool",
+//         "totalValue": 4000000,
+//         "tokens": [
+//             {
+//                 "symbol": "SyncX",
+//                 "amount": 1,
+//                 "proportion": 50,
+//                 "_id": "66ffb5cbfbbf4c246b90a3b2"
+//             },
+//             {
+//                 "symbol": "SyncY",
+//                 "amount": 1,
+//                 "proportion": 50,
+//                 "_id": "66ffb5cbfbbf4c246b90a3b3"
+//             }
+//         ],
+//         "rebalancingThreshold": 10,
+//         "rebalancingFrequency": "daily",
+//         "takeProfitPercentage": 200,
+//         "stopLossPercentage": 1,
+//         "createdAt": "2024-10-04T09:30:51.006Z",
+//         "updatedAt": "2024-10-04T09:30:51.006Z",
+//         "__v": 0,
+//         "poolAddress": "TYda8NoMYJDWHTSQBtr9aZ3ayt4E7CcLnv"
+//     },
+//     {
+//         "_id": "6704eadb0584e9e37c4b8f8f",
+//         "userWalletAddress": "TYZGL81XhUUmke5RHfX1waTkuqy6tVo8SA",
+//         "poolName": "MY_POOL",
+//         "totalValue": 4000000,
+//         "tokens": [
+//             {
+//                 "symbol": "SCX",
+//                 "amount": 1,
+//                 "proportion": 50,
+//                 "_id": "6704eadb0584e9e37c4b8f90"
+//             },
+//             {
+//                 "symbol": "SCY",
+//                 "amount": 1,
+//                 "proportion": 50,
+//                 "_id": "6704eadb0584e9e37c4b8f91"
+//             }
+//         ],
+//         "rebalancingThreshold": 10,
+//         "rebalancingFrequency": "3600",
+//         "takeProfitPercentage": 30,
+//         "stopLossPercentage": 5,
+//         "createdAt": "2024-10-08T08:18:35.807Z",
+//         "updatedAt": "2024-10-08T08:18:35.807Z",
+//         "__v": 0
+//     }
+// ]
 
-        console.log('Fetched pools for user:', data);
-    } catch (error) {
-        console.error('Error fetching user pools:', error);
-    }
-}
 
 // Example usage
-fetchUserPools('0x1234567890123456789012345678901234567890');
 const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
     console.log("Pricesss", prices)
     const [searchTerm, setSearchTerm] = useState('')
+    const [userPools, setUserPools] = useState([])
 
-    const filteredPools = userPools.filter(pool =>
+
+    const { address } = useWallet();
+
+    const [userAddress, setUserAddress] = useState<string | null>(address ? address : "");
+    useEffect(() => {
+        if (address) {
+            setUserAddress(address)
+            fetchUserPools(address);
+        }
+    }, [address])
+
+    const filteredPools = userPools?.filter(pool =>
         pool.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+
+    async function fetchUserPools(walletAddress: string) {
+        try {
+            const response = await fetch(`/api/pools/get-user-pools?walletAddress=${walletAddress}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch pools');
+            }
+            setUserPools(data);
+
+            console.log('Fetched pools for user:', data);
+        } catch (error) {
+            console.error('Error fetching user pools:', error);
+        }
+    }
+
+
+    // fetchUserPools('0x1234567890123456789012345678901234567890');
 
     const handleViewMore = (poolId: number) => {
         // In a real application, this would navigate to the single pool page
