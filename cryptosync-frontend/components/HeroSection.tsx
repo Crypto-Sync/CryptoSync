@@ -12,25 +12,14 @@ const HeroSection = () => {
                 <p className="text-xl mb-8 text-secondary-foreground">
                     Simplify crypto asset management with dynamic thresholds, take-profit, and stop-loss strategies. Manage your assets efficiently, minimize risks, and maximize growth.
                 </p>
-                <div className='flex gap-2'>
+                <div className='flex gap-2 items-center justify-center'>
                     <Link
                         href="/create-pool"
                         className="px-8 py-4 bg-accent hover:bg-black text-white rounded-xl shadow-lg transition-all duration-300 ease-in-out"
                     >
                         Create Your Pool
                     </Link>
-                    <Link
-                        href="/dashboard"
-                        className="px-8 py-4 bg-accent hover:bg-black text-white rounded-xl shadow-lg transition-all duration-300 ease-in-out"
-                    >
-                        User&apos;s Pool
-                    </Link>
-                    <Link
-                        href="/pool/1"
-                        className="px-8 py-4 bg-accent hover:bg-black text-white rounded-xl shadow-lg transition-all duration-300 ease-in-out"
-                    >
-                        Single Pool
-                    </Link>
+
                 </div>
             </div>
         </section>
