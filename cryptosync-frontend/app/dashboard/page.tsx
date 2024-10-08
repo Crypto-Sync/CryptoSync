@@ -5,7 +5,7 @@ const UserPoolsList = dynamic(() => import("@/components/UserPoolsList"), { ssr:
 export default async function page() {
     const prices: CryptoPrices = await fetchCryptoPrices();
     return (
-        <div className="py-20 min-h-screen flex items-center justify-center">
+        <div className="py-10 min-h-screen flex items-center justify-center">
             <UserPoolsList prices={prices} />
         </div>
     );

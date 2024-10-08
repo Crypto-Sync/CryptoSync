@@ -1,11 +1,13 @@
-
+'use client'
 import Link from 'next/link'
 import { ModeToggle } from './ModeToggle'
 import dynamic from 'next/dynamic'
+import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
 
 const ConnectWallet = dynamic(() => import("@/components/ConnectWallet"), { ssr: false })
 
 export function Header() {
+    const { address } = useWallet();
     return (
         <header className="bg-transparent sticky top-0 z-50 w-full border-b border-border/40  backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-14 max-w-screen-2xl items-center">
@@ -20,8 +22,18 @@ export function Header() {
                     <div className="w-full flex-1 md:w-auto md:flex-none">
                     </div>
                     <nav className="flex items-center gap-4">
-                        <ModeToggle />
+                        {address ?
+                            <Link
+                                href="/dashboard"
+                                className="px-4 py-2 bg-accent hover:bg-black text-white rounded-xl shadow-lg transition-all duration-300 ease-in-out"
+                            >
+                                Dashboard
+                            </Link>
+                            : null
+                        }
                         <ConnectWallet />
+                        <ModeToggle />
+
                     </nav>
                 </div>
             </div>
