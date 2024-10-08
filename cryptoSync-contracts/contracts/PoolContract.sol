@@ -5,13 +5,13 @@ import "./PoolFactory.sol";
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Interfaces/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-contract PoolContract {
 
+contract PoolContract {
     PoolFactory public factory;
 
     address[2] public tokens;
     address public owner;
-    address immutable stableCoin = 0xECa9bC828A3005B9a3b909f2cc5c2a54794DE05F; 
+    address immutable stableCoin = 0xECa9bC828A3005B9a3b909f2cc5c2a54794DE05F;
     uint256[2] public proportions;
     uint256[2] public initialTokenValues;
     uint256[2] public takeProfit;
@@ -34,9 +34,17 @@ contract PoolContract {
         _;
     }
 
-    event Rebalanced(address[2] tokens, uint256[2] proportions);
+    event RebalanceExecuted(
+        address fromToken,
+        address toToken,
+        uint256 amountToSwap
+    );
     event TakeProfitExecuted(address token, uint256 amountConverted);
-    event StopLossExecuted(address token, uint256 amountConverted);
+    event StopLossExecuted(
+        address token,
+        uint256 amountConverted,
+        uint256 price
+    );
     event ParametersUpdated(
         uint256 newThreshold,
         uint256[2] newTakeProfit,
@@ -81,21 +89,26 @@ contract PoolContract {
         address tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) internal returns(uint256 amountOut) {
+    ) internal returns (uint256 amountOut) {
         IERC20(tokenIn).approve(address(swapRouter), amountIn);
 
-        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: abi.encodePacked(tokenIn, uint24(3000), stableCoin, uint24(3000), tokenOut),
-            recipient: msg.sender,
-            deadline: block.timestamp + 15,
-            amountIn: amountIn,
-            amountOutMinimum: 0
-        });
+        ISwapRouter.ExactInputParams memory params = ISwapRouter
+            .ExactInputParams({
+                path: abi.encodePacked(
+                    tokenIn,
+                    uint24(3000),
+                    stableCoin,
+                    uint24(3000),
+                    tokenOut
+                ),
+                recipient: msg.sender,
+                deadline: block.timestamp + 15,
+                amountIn: amountIn,
+                amountOutMinimum: 0
+            });
 
         amountOut = swapRouter.exactInput(params);
     }
-
-
 
     // ********************************************For take Profit ******************************************** //
 
@@ -143,7 +156,11 @@ contract PoolContract {
                 uint256 balance = balanceOf(tokens[i]);
                 if (balance > 0) {
                     _swapTokens(tokens[i], stableCoin, balance);
-                    emit StopLossExecuted(tokens[i], balance);
+                    emit StopLossExecuted(
+                        tokens[i],
+                        balance,
+                        factory.getOnChainPrice(tokens[i])
+                    );
                 }
             }
         }
@@ -207,7 +224,7 @@ contract PoolContract {
         }
         if (amountToSwap > 0) {
             _swapTokens(fromToken, toToken, amountToSwap);
-            emit Rebalanced(tokens, proportions);
+            emit RebalanceExecuted(fromToken, toToken, amountToSwap);
         }
     }
 
@@ -243,9 +260,7 @@ contract PoolContract {
                 _executeRebalance(prices);
             }
         }
-
     }
-
 
     // ********************************************For Update parameters ******************************************** //
 
@@ -353,5 +368,33 @@ contract PoolContract {
 
     function getDecimalOfToken(address token) public view returns (uint8) {
         return IERC20Metadata(token).decimals();
+    }
+
+    function getTokenBalanceInUSD()
+        public
+        view
+        returns (uint256 totalValueInUSD, uint256[2] memory valueProportions)
+    {
+        uint256[2] memory prices = fetchPrices();
+        uint256[2] memory tokenValuesInUSD;
+        totalValueInUSD = 0;
+
+        // Calculate the total value in USD for each token and the total pool value
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 tokenBalance = balanceOf(tokens[i]);
+            tokenValuesInUSD[i] =
+                (tokenBalance * prices[i]) /
+                10 ** getDecimalOfToken(tokens[i]);
+            totalValueInUSD += tokenValuesInUSD[i];
+        }
+
+        // Calculate the proportion of each token's value as part of the total value
+        if (totalValueInUSD > 0) {
+            for (uint256 i = 0; i < tokens.length; i++) {
+                valueProportions[i] =
+                    (tokenValuesInUSD[i] * 10_000) /
+                    totalValueInUSD; // Value proportion in basis points (BPS)
+            }
+        }
     }
 }

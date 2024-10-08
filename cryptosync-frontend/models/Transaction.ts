@@ -4,17 +4,17 @@ import { IPool } from "./Pool";
 
 export interface ITransaction extends Document {
   type:
-    | "rebalance"
-    | "take-profit"
-    | "stop-loss"
-    | "deposit"
-    | "withdraw"
-    | "modify-pool";
+  | "rebalance"
+  | "take-profit"
+  | "stop-loss"
+  | "deposit"
+  | "withdraw"
+  | "modify-pool";
   txDate: Date;
   txHash: string;
   description: string;
-  tokenBefore: Record<string, number>;
-  tokenAfter: Record<string, number>;
+  tokenBefore: { tokenName: string, tokenPercentage: number }[];
+  tokenAfter: { tokenName: string, tokenPercentage: number }[];
   amount: number;
   user: IUser["userWalletAddress"];
   pool: IPool["poolAddress"];
@@ -45,14 +45,14 @@ const transactionSchema: Schema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  tokenBefore: {
-    type: Map,
-    of: Number,
-  },
-  tokenAfter: {
-    type: Map,
-    of: Number,
-  },
+  tokenBefore: [{
+    tokenName: { type: String, required: true },
+    tokenPercentage: { type: Number, required: true }
+  }],
+  tokenAfter: [{
+    tokenName: { type: String, required: true },
+    tokenPercentage: { type: Number, required: true }
+  }],
   amount: {
     type: Number,
     default: 0,
@@ -70,8 +70,8 @@ const transactionSchema: Schema = new mongoose.Schema({
 
 });
 
-const Transaction: Model<ITransaction> = mongoose.model<ITransaction>(
-  "Transaction",
-  transactionSchema
-);
+// Check if the model is already compiled, and if not, compile it
+const Transaction: Model<ITransaction> =
+  mongoose.models.Transaction || mongoose.model<ITransaction>("Transaction", transactionSchema);
+
 export default Transaction;
