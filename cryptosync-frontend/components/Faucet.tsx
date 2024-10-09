@@ -75,7 +75,7 @@ const Faucet: React.FC = () => {
             setStatusVisible(true);
             timeoutId = setTimeout(() => {
                 setStatusVisible(false);
-                setTimeout(() => setStatus(null), 300); // Clear status after fade out
+                setTimeout(() => setStatus(null), 300);
             }, 5000);
         }
 
@@ -159,8 +159,8 @@ const Faucet: React.FC = () => {
                             onClick={() => mintTokens(key)}
                             disabled={loading[key]}
                             className={`px-4 py-2 rounded-lg shadow ${key === 'SyncX' ? 'bg-blue-600 hover:bg-blue-700' :
-                                    key === 'SyncY' ? 'bg-green-600 hover:bg-green-700' :
-                                        'bg-red-600 hover:bg-red-700'
+                                key === 'SyncY' ? 'bg-green-600 hover:bg-green-700' :
+                                    'bg-red-600 hover:bg-red-700'
                                 } text-white ${loading[key] ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {loading[key] ? 'Minting...' : `Mint ${token.name}`}
@@ -169,8 +169,11 @@ const Faucet: React.FC = () => {
                 ))}
             </div>
             {status && (
-                <div className={`mt-4 p-3 rounded ${status.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700 dark:text-black-100'
-                    }`}>
+                <div
+                    className={`mt-4 p-3 rounded transition-all duration-300 ${statusVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-2'
+                        } ${status.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                        }`}
+                >
                     {status}
                 </div>
             )}
