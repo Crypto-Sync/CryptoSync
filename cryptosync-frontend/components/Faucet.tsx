@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
-import { parseEther } from 'viem';
+import { parseEther, formatEther } from 'viem';
 
-const faucetAbi = [
+const tokenAbi = [
     {
         "inputs": [
             { "internalType": "address", "name": "user", "type": "address" },
@@ -14,9 +14,19 @@ const faucetAbi = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "inputs": [
+            { "internalType": "address", "name": "account", "type": "address" }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     }
 ];
-
 
 const tokens: { [key: string]: { address: string; name: string } } = {
     SyncX: {
@@ -34,23 +44,19 @@ const tokens: { [key: string]: { address: string; name: string } } = {
 };
 
 const Faucet: React.FC = () => {
-
     const [tronWeb, setTronWeb] = useState<any>(null);
-
-    const { address } = useWallet(); // Assuming you're using the TronWallet adapter hooks to connect
+    const { address } = useWallet();
     const [status, setStatus] = useState<string | null>(null);
+    const [balances, setBalances] = useState<{ [key: string]: string }>({});
+    const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
+    const [statusVisible, setStatusVisible] = useState(false);
 
     useEffect(() => {
         const initTronWeb = async () => {
             if (typeof window !== 'undefined' && window.tronWeb) {
                 const tronInstance = window.tronWeb;
-
-                // Check if defaultAddress and base58 exist
-                const defaultAddress = tronInstance?.defaultAddress?.base58;
-
-                if (defaultAddress) {
+                if (tronInstance?.defaultAddress?.base58) {
                     setTronWeb(tronInstance);
-
                 } else {
                     console.error('No default address found in TronLink.');
                 }
@@ -62,61 +68,112 @@ const Faucet: React.FC = () => {
         initTronWeb();
     }, []);
 
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
 
+        if (status) {
+            setStatusVisible(true);
+            timeoutId = setTimeout(() => {
+                setStatusVisible(false);
+                setTimeout(() => setStatus(null), 300); // Clear status after fade out
+            }, 5000);
+        }
 
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [status]);
+
+    useEffect(() => {
+        if (address && tronWeb) {
+            fetchAllBalances();
+        }
+    }, [address, tronWeb]);
+
+    const fetchBalance = async (tokenKey: string) => {
+        const token = tokens[tokenKey];
+        try {
+            const contract = await tronWeb.contract(tokenAbi, token.address);
+            const balance = await contract.methods.balanceOf(address).call();
+            return formatEther(balance.toString());
+        } catch (error) {
+            console.error(`Error fetching ${tokenKey} balance:`, error);
+            return '0';
+        }
+    };
+
+    const fetchAllBalances = async () => {
+        const newBalances: { [key: string]: string } = {};
+        for (const tokenKey of Object.keys(tokens)) {
+            newBalances[tokenKey] = await fetchBalance(tokenKey);
+        }
+        setBalances(newBalances);
+    };
 
     const mintTokens = async (tokenKey: string) => {
-        const token = tokens[tokenKey];
-        console.log(token);
-        try {
-            if (!address) {
-                setStatus('Please connect your wallet');
-                return;
-            }
+        if (!address) {
+            setStatus('Please connect your wallet');
+            return;
+        }
 
-            const contract = await tronWeb.contract(faucetAbi, token.address);
-            const mintAmount = parseEther("100"); // Mint 1000 tokens
+        setLoading(prev => ({ ...prev, [tokenKey]: true }));
+        const token = tokens[tokenKey];
+
+        try {
+            const contract = await tronWeb.contract(tokenAbi, token.address);
+            const mintAmount = parseEther("100");
 
             await contract.methods.mintMore(address, mintAmount).send({
                 from: address,
                 feeLimit: 1000 * 1e6,
-                // callValue: 0, // No TRX to send with this call
             });
 
             setStatus(`${token.name} minted successfully!`);
+            // Update balance after minting
+            const newBalance = await fetchBalance(tokenKey);
+            setBalances(prev => ({ ...prev, [tokenKey]: newBalance }));
         } catch (error) {
             console.error('Error minting tokens:', error);
-            // setStatus('Error minting tokens: ' + error.message);
+            setStatus('Error minting tokens. Please try again.');
+        } finally {
+            setLoading(prev => ({ ...prev, [tokenKey]: false }));
         }
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 w-full max-w-lg flex flex-col items-center">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Faucet</h2>
-            <p className="mb-4 text-gray-800 dark:text-gray-300">
-                Click to mint your test tokens (SyncX, SyncY, SyncZ):
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 w-full max-w-lg">
+            <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">Faucet</h2>
+            <p className="mb-4 text-center text-gray-800 dark:text-gray-300">
+                Click to mint your test tokens:
             </p>
-            <div className="flex space-x-4">
-                <button
-                    onClick={() => mintTokens('SyncX')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
-                >
-                    Mint SyncX
-                </button>
-                <button
-                    onClick={() => mintTokens('SyncY')}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
-                >
-                    Mint SyncY
-                </button>
-                <button
-                    onClick={() => mintTokens('SyncZ')}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
-                >
-                    Mint SyncZ
-                </button>
+            <div className="space-y-4">
+                {Object.entries(tokens).map(([key, token]) => (
+                    <div key={key} className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{token.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Balance: {balances[key] || '0'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => mintTokens(key)}
+                            disabled={loading[key]}
+                            className={`px-4 py-2 rounded-lg shadow ${key === 'SyncX' ? 'bg-blue-600 hover:bg-blue-700' :
+                                    key === 'SyncY' ? 'bg-green-600 hover:bg-green-700' :
+                                        'bg-red-600 hover:bg-red-700'
+                                } text-white ${loading[key] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {loading[key] ? 'Minting...' : `Mint ${token.name}`}
+                        </button>
+                    </div>
+                ))}
             </div>
-            {status && <p className="mt-4 text-red-500 dark:text-red-400">{status}</p>}
+            {status && (
+                <div className={`mt-4 p-3 rounded ${status.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700 dark:text-black-100'
+                    }`}>
+                    {status}
+                </div>
+            )}
         </div>
     );
 };
