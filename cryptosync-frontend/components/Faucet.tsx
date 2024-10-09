@@ -3,30 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
 import { parseEther, formatEther } from 'viem';
-
-const tokenAbi = [
-    {
-        "inputs": [
-            { "internalType": "address", "name": "user", "type": "address" },
-            { "internalType": "uint256", "name": "amount", "type": "uint256" }
-        ],
-        "name": "mintMore",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            { "internalType": "address", "name": "account", "type": "address" }
-        ],
-        "name": "balanceOf",
-        "outputs": [
-            { "internalType": "uint256", "name": "", "type": "uint256" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
+import {abi} from "../abis/Token.json";
 
 const tokens: { [key: string]: { address: string; name: string } } = {
     SyncX: {
@@ -93,7 +70,7 @@ const Faucet: React.FC = () => {
     const fetchBalance = async (tokenKey: string) => {
         const token = tokens[tokenKey];
         try {
-            const contract = await tronWeb.contract(tokenAbi, token.address);
+            const contract = await tronWeb.contract(abi, token.address);
             const balance = await contract.methods.balanceOf(address).call();
             return formatEther(balance.toString());
         } catch (error) {
@@ -120,7 +97,7 @@ const Faucet: React.FC = () => {
         const token = tokens[tokenKey];
 
         try {
-            const contract = await tronWeb.contract(tokenAbi, token.address);
+            const contract = await tronWeb.contract(abi, token.address);
             const mintAmount = parseEther("100");
 
             await contract.methods.mintMore(address, mintAmount).send({
