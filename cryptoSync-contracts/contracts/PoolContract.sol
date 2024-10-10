@@ -2,9 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./PoolFactory.sol";
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Interfaces/IERC20.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract PoolContract {
     PoolFactory public factory;
@@ -21,7 +20,7 @@ contract PoolContract {
 
     uint256 constant MAX_BPS = 10_000; // for Percentage Values
 
-    ISwapRouter public swapRouter;
+    IUniswapV2Router02 public swapRouter;
     uint256 public lastChecked;
 
     modifier onlyOwner() {
@@ -74,7 +73,9 @@ contract PoolContract {
         owner = _owner;
         lastChecked = block.timestamp;
         initialTokenValues = _initialTokenValues;
-        swapRouter = ISwapRouter(0x61Ec26aA57019C486B10502285c5A3D4A4750AD7);
+        swapRouter = IUniswapV2Router02(
+            0x706254C29Acdc03ec51e4751B53eC3FbD8Ba7c25
+        );
     }
 
     function fetchPrices() public view returns (uint256[2] memory) {
@@ -89,25 +90,33 @@ contract PoolContract {
         address tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) internal returns (uint256 amountOut) {
+    ) internal {       
+        require(amountIn > 0, "Amount must be > 0");
+
+        // Determine the path
+        address[] memory path;
+        if (tokenOut == stableCoin) {
+            path = new address[](2);
+            path[0] = tokenIn;
+            path[1] = tokenOut;
+        } else {
+            path = new address[](3);
+            path[0] = tokenIn;
+            path[1] = stableCoin;
+            path[2] = tokenOut;
+        }
+
+        // Approve router to spend tokens
         IERC20(tokenIn).approve(address(swapRouter), amountIn);
 
-        ISwapRouter.ExactInputParams memory params = ISwapRouter
-            .ExactInputParams({
-                path: abi.encodePacked(
-                    tokenIn,
-                    uint24(3000),
-                    stableCoin,
-                    uint24(3000),
-                    tokenOut
-                ),
-                recipient: msg.sender,
-                deadline: block.timestamp + 15,
-                amountIn: amountIn,
-                amountOutMinimum: 0
-            });
-
-        amountOut = swapRouter.exactInput(params);
+        // Perform the swap
+        swapRouter.swapExactTokensForTokens(
+            amountIn,
+            0, // Use the minimum output parameter
+            path,
+            address(this),
+            block.timestamp + 15 //deadline
+        );
     }
 
     // ********************************************For take Profit ******************************************** //
