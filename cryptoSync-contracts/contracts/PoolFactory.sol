@@ -8,9 +8,8 @@ import "./PoolContract.sol";
 
 contract PoolFactory {
     uint256 constant MAX_BPS = 10_000;
-    address immutable stableCoin = 0xECa9bC828A3005B9a3b909f2cc5c2a54794DE05F;
-    address public immutable uniswapFactory =
-        0xc3bdaC99dFca480483f747D86Ee074BCFfe9Be55;
+    address public immutable stableCoin = 0xECa9bC828A3005B9a3b909f2cc5c2a54794DE05F;
+    address public sunswapFactory;
 
     mapping(address => address[]) public userPools;
     mapping(address => address) public tokenPoolAddresses;
@@ -35,27 +34,28 @@ contract PoolFactory {
         _;
     }
 
-    constructor() {
-        operators.push(0xd13b85D23eFdEa60F8B84571254D6bBD7915cDe8);
-        isOperator[0xd13b85D23eFdEa60F8B84571254D6bBD7915cDe8] = true;
+    constructor(address _sunswapFactory) {
+        operators.push(msg.sender);
+        isOperator[msg.sender] = true;
+        sunswapFactory = _sunswapFactory;
     }
 
     function setPoolAddresses() external onlyOperator {
         tokenPoolAddresses[
             0xe1B8d3435d25aBEc5986A2ddE4E32cC193e5d2F0
-        ] = IUniswapV2Factory(uniswapFactory).getPair(
+        ] = IUniswapV2Factory(sunswapFactory).getPair(
             0xe1B8d3435d25aBEc5986A2ddE4E32cC193e5d2F0, // SYNC X address
             stableCoin
         );
         tokenPoolAddresses[
             0xca319A9a1F5E0e2EAcfF6455Dc304096aBBEDd6B
-        ] = IUniswapV2Factory(uniswapFactory).getPair(
+        ] = IUniswapV2Factory(sunswapFactory).getPair(
             0xca319A9a1F5E0e2EAcfF6455Dc304096aBBEDd6B, // SYNC Y address
             stableCoin
         );
         tokenPoolAddresses[
             0xaCF2a4d6a04AA8b57aB7042AdDD1eFFB8Cd50833
-        ] = IUniswapV2Factory(uniswapFactory).getPair(
+        ] = IUniswapV2Factory(sunswapFactory).getPair(
             0xaCF2a4d6a04AA8b57aB7042AdDD1eFFB8Cd50833, // SYNC Z address
             stableCoin
         );
@@ -217,4 +217,4 @@ contract PoolFactory {
         isOperator[_newOperator] = true;
     }
 }
-// THBfkWjoJqY7appwUmtHrNkAHhZR46Cj5n new factory address
+
