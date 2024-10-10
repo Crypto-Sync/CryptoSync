@@ -217,3 +217,4 @@ contract PoolFactory {
         isOperator[_newOperator] = true;
     }
 }
+// THBfkWjoJqY7appwUmtHrNkAHhZR46Cj5n new factory address

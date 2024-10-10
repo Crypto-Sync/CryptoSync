@@ -97,9 +97,9 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
         }
     }
 
-    async function fetchUserPools(walletAddress: string) {
+    async function fetchUserPools(userWalletAddress: string) {
         try {
-            const response = await fetch(`/api/pools/get-user-pools?walletAddress=${walletAddress}`);
+            const response = await fetch(`/api/pools/get-user-pools?userWalletAddress=${userWalletAddress}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -111,7 +111,7 @@ const UserPoolsList: React.FC<{ prices: CryptoPrices }> = ({ prices }) => {
                 const totalValue = poolBalanceInUSD?.totalValue ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
                 return { ...pool, poolBalanceInUSD: totalValue, currentTokenProportion: poolBalanceInUSD?.tokenProportion }; // Return a new object with `poolBalanceInUSD` added
             }));
-            console.log(updatedPools)
+            console.log(updatedPools);
             setUserPools(updatedPools);
             setFilteredPools(updatedPools);
             console.log('Fetched pools for user:', data);

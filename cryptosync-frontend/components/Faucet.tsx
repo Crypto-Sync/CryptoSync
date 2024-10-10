@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
 import { parseEther, formatEther } from 'viem';
-import {abi} from "../abis/Token.json";
+import { abi } from "../abis/Token.json";
 
 const tokens: { [key: string]: { address: string; name: string } } = {
     SyncX: {
@@ -21,6 +21,7 @@ const tokens: { [key: string]: { address: string; name: string } } = {
 };
 
 const Faucet: React.FC = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tronWeb, setTronWeb] = useState<any>(null);
     const { address } = useWallet();
     const [status, setStatus] = useState<string | null>(null);

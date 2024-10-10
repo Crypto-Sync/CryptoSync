@@ -6,13 +6,13 @@ export async function GET(req: Request) {
   await dbConnect(); // Connect to the database
 
   const { searchParams } = new URL(req.url); // Get search parameters from the request URL
-  const userWalletAddress = searchParams.get("walletAddress"); // Extract the walletAddress parameter
+  const userWalletAddress = searchParams.get("userWalletAddress"); // Extract the userWalletAddress parameter
   console.log("userWalletAddress", userWalletAddress);
   try {
-    // If no walletAddress is provided, return a message
+    // If no userWalletAddress is provided, return a message
     if (!userWalletAddress) {
       return NextResponse.json(
-        { message: "walletAddress parameter is required" },
+        { message: "userWalletAddress parameter is required" },
         { status: 400 }
       );
     }
