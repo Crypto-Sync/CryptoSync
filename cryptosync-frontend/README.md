@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CryptoSync
 
-## Getting Started
+## Project Overview
 
-First, run the development server:
+CryptoSync is an automated, decentralized platform built on the TRON blockchain, designed for portfolio rebalancing. By integrating with Sunswap Dex, CryptoSync helps retail crypto investors manage their portfolios efficiently, minimize emotional decision-making, and automate rebalancing based on predefined strategies.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
+- **Automated Rebalancing:** Automatically adjusts portfolio allocations based on user-defined thresholds.
+- **Take-Profit & Stop-Loss:** Enables users to set and manage risk management parameters.
+- **Customizable Settings:** Modify allocation targets, rebalancing thresholds, and risk management preferences at any time.
+- **Emergency Withdraw:** Withdraw all assets instantly in case of market volatility or other unforeseen circumstances.
+- **Secure & Decentralized:** Users retain full control over their funds, with no external access by third parties.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup Instructions
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To set up the CryptoSync project locally, follow the steps below:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Clone the Repository:**
+   ```bash
+   git clone <repository-url>
+   cd cryptosync-frontend
+   ```
 
-## Learn More
+2. **Install Dependencies:**
+   Run the following command to install all necessary dependencies:
+   ```bash
+   yarn
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Set up Environment Variables:**
+   Create a `.env.local` file in the `cryptosync-frontend` folder and add the following environment variables:
+   ```bash
+   NEXT_PUBLIC_MONGODB_URI="MONGODB_URL"    # MongoDB URL for local storage
+   NEXT_PUBLIC_PRIVATE_KEY="PRIVATE_KEY"    # Private key for calling getter functions
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   - **MONGODB_URL:** The MongoDB URI where your data will be stored locally.
+   - **PRIVATE_KEY:** The private key required for calling getter functions.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Start the Development Server:**
+   After setting up the environment variables, start the project by running:
+   ```bash
+   yarn dev
+   ```
 
-## Deploy on Vercel
+   This will launch the app in development mode, accessible at `http://localhost:3000`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Usage Instructions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Connect your wallet** and visit the site: [CryptoSync](https://crypto-sync-seven.vercel.app/)
+2. **Create Your Pool**: Click on the "Create Your Pool" button and set up your asset allocations, rebalancing thresholds, and risk management parameters.
+3. **Approve Tokens**: Approve the tokens and deploy your pool via your wallet.
+4. **Monitor and Adjust**: Manage your pool through the dashboard, track performance, and adjust parameters as needed.
+
+## Demo and Resources
+
+- **Live Demo**: [Watch Demo](https://youtu.be/zok9NclVzLU)
+
