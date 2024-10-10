@@ -7,7 +7,7 @@ dotenv.config();
 const contractJson = JSON.parse(fs.readFileSync('./build/contracts/PoolFactory.json', 'utf8'));
 const abi = contractJson.abi;
 
-const poolFactoryAddress = "TAdRkJmETfaQDwkq1VADnz1qU7JW9Ej7nf";
+const poolFactoryAddress = "TGpBZHgK8qb221AQFNxSmceMR3MRwFzNVK";
 
 const privateKey = process.env.PRIVATE_KEY;
 // const tronWeb = new TronWeb({
@@ -23,9 +23,9 @@ console.log('tronWeb', tronWeb);
 
 const params = [
   ['TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud', 'TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq'],
-  ['100000000000000000000', '100000000000000000000'],
+  ['100000000000000000000', '391396588401517677128'],
   ['5000', '5000'],
-  '1000',
+  '10000',
   ['10500', '10500'],
   ['1000000', '50000'],
   '86400'

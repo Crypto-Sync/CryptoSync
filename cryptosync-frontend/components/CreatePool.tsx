@@ -12,7 +12,7 @@ import { TooltipArrow } from '@radix-ui/react-tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import * as Progress from '@radix-ui/react-progress';
 import { formatEther, parseEther } from 'viem'
-import { abi } from '../abis/PoolFactory.json'
+import { abi, contractAddress } from '../abis/PoolFactory.json'
 
 // Type for each token
 interface Token {
@@ -446,12 +446,7 @@ export default function CreatePool() {
             return;
         }
 
-        const poolFactoryAddress = 'THBfkWjoJqY7appwUmtHrNkAHhZR46Cj5n';
-        const factoryContract = await tronWeb.contract(abi, poolFactoryAddress);
-        // const factoryContract = await tronWeb.contract().at(poolFactoryAddress);
-
-
-
+        const factoryContract = await tronWeb.contract(abi, contractAddress);
 
         let rebalancingInterval: string;
         console.log("rebalancingFrequency.toLowerCase()", rebalancingFrequency.toLowerCase());
@@ -496,7 +491,7 @@ export default function CreatePool() {
                 console.log(`balance of token ${i}`, balance);
 
                 // Fetch the allowance of the user for the current token
-                const allowance = await tokenContract.allowance(userAddress, poolFactoryAddress).call();
+                const allowance = await tokenContract.allowance(userAddress, contractAddress).call();
 
                 // Convert allowance to a number for comparison
                 const allowanceInNumber = Number(formatEther(allowance));
@@ -511,7 +506,7 @@ export default function CreatePool() {
 
                     // Approve max allowance if allowance is not enough
                     await tokenContract.approve(
-                        poolFactoryAddress,
+                        contractAddress,
                         '115792089237316195423570985008687907853269984665640564039457584007913129639935' // Max approval
                     ).send({
                         from: userAddress

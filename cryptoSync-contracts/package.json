@@ -2,6 +2,7 @@
   "name": "cryptosync",
   "version": "1.0.0",
   "main": "tronbox-config.js",
+  "type": "module",
   "directories": {
     "test": "test"
   },
