@@ -290,7 +290,8 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                         </div>
                                         <div className="flex justify-between text-sm text-gray-500">
                                             <span>Initial: {asset.proportion}%</span>
-                                            <span>Initial Price: ${asset.amount.toLocaleString()}</span>
+                                            {/* <span>Initial Price: ${asset.amount.toLocaleString()}</span> */}
+                                            <span>Initial Price: $2</span>
                                         </div>
                                     </div>
                                 ))}

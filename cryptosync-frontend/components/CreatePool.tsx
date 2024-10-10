@@ -33,8 +33,8 @@ interface RebalancingOption {
 
 // List of tokens
 const tokens: Token[] = [
-    { id: 'syx', name: 'SYX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1.5 },
-    { id: 'syy', name: 'SYY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 10 },
+    { id: 'syx', name: 'SYX', tokenAddress: "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud", fullName: 'SyncX', icon: "trx-icon.svg", color: 'bg-yellow-500', balance: 1000 },
+    { id: 'syy', name: 'SYY', tokenAddress: "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq", fullName: 'SyncY', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
     { id: 'syz', name: 'SYZ', tokenAddress: "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us", fullName: 'SyncZ', icon: "trx-icon.svg", color: 'bg-blue-500', balance: 1000 },
 ];
 
@@ -84,7 +84,7 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
         const value = Number(e.target.value)
         onStopLossChange(token.id, value)
     }
-    const tokenPrice = 1;
+    const tokenPrice = 2;
 
     const handleInputAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = parseFloat(e.target.value);
@@ -157,8 +157,8 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                 </div>
                 <div>
                     <label htmlFor={`stopLoss-${token.id}`} className="flex items-center text-sm font-medium text-secondary-foreground mb-1">
-                        Stop Loss (%)
-                        <InfoTooltip content="The percentage decrease at which to sell to limit losses" />
+                        Stop Loss (in USD)
+                        <InfoTooltip content="At this price all your tokens will be sold out for handle loss" />
                     </label>
                     <input
                         type="number"
