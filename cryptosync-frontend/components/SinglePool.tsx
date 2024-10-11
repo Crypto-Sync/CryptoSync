@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import * as Progress from "@radix-ui/react-progress"
 import { Button } from "@/components/ui/button"
-import { CryptoPrices } from '@/lib/fetchCryptoPrices'
 import { useParams, useRouter } from 'next/navigation'
 import { TronWeb } from "tronweb"
 import { abi } from '@/abis/PoolContract.json'
+import { formatReadableDateOnly, formatReadableTimeWithTimeZone } from '@/lib/dateFormatter'
 // Mock data - replace with actual data fetching in a real application
 const poolData = {
     name: "Balanced Growth Pool",
@@ -56,20 +56,19 @@ interface Pool {
     poolAddress: string;
     poolBalanceInUSD?: number;
     currentTokenProportion?: bigint[];
+    performance?: number
 }
-interface SinglePoolPageProps {
-    prices: CryptoPrices;
-}
-export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
-    console.log(prices)
+
+export default function SinglePoolPage() {
+
     const router = useRouter()
     const params = useParams()
-    console.log(params.id)
+    // console.log(params.id)
     const [expandedRows, setExpandedRows] = useState<number[]>([])
 
-    const calculatePerformance = () => {
-        const performance = ((poolData.currentBalance - poolData.initialBalance) / poolData.initialBalance) * 100
-        return performance.toFixed(2)
+    const calculatePerformance = async (currentBalance: number, initialBalance: number) => {
+        const performance = ((currentBalance - initialBalance) / initialBalance) * 100
+        return performance
     }
 
     const getStatusIcon = (type: string) => {
@@ -96,12 +95,12 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
     }
     const handleDepositFunds = () => {
         router.push("/pool/deposit-token/1")
-        console.log("Deposit more funds")
+        // console.log("Deposit more funds")
         // Implement deposit logic here
     }
 
     const handleModifyPool = () => {
-        console.log("Modify pool")
+        // console.log("Modify pool")
         // Implement pool modification logic here
     }
 
@@ -116,20 +115,16 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
 
     async function getTokenBalanceInUSDtry(poolAddress: string) {
         try {
-            // Call the isOperator function
-            console.log(poolAddress)
+
 
             // const PoolContract = await tronWeb.contract().at("TQ9CL6P84NuJ7AyFyWFnRcUDqyZxraScVd");
             const PoolContract = await tronWeb.contract(abi, poolAddress);
-            console.log(await PoolContract)
+
             const result = await PoolContract.getTokenBalanceInUSD().call();
 
             // result contains totalValueInUSD and valueProportions
             const totalValueInUSD = result.totalValueInUSD;
             const valueProportions = result.valueProportions;
-
-            console.log(`Total Value in USD: ${tronWeb.toDecimal(totalValueInUSD)}`);
-            console.log(`Value Proportions: ${valueProportions}`);
 
             return { totalValue: tronWeb.toDecimal(totalValueInUSD), tokenProportion: valueProportions };
 
@@ -149,11 +144,13 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                 throw new Error(data.message || 'Failed to fetch pools');
             }
             const poolDataa = data[0];
-            const poolBalanceInUSD = await getTokenBalanceInUSDtry(data[0].poolAddress);
-            const usdc = poolBalanceInUSD ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
-            const newData = { ...poolDataa, "poolBalanceInUSD": usdc, currentTokenProportion: poolBalanceInUSD?.tokenProportion }
-            setSinglePool(newData);
 
+            const poolBalanceInUSD = await getTokenBalanceInUSDtry(data[0].poolAddress);
+
+            const poolPerformance = await calculatePerformance(poolBalanceInUSD ? poolBalanceInUSD.totalValue : 0, poolDataa.totalValue)
+            const usdc = poolBalanceInUSD ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
+            const newData = { ...poolDataa, "poolBalanceInUSD": usdc, currentTokenProportion: poolBalanceInUSD?.tokenProportion, performance: poolPerformance }
+            setSinglePool(newData);
             console.log('Fetched pools for user:', newData);
         } catch (error) {
             console.error('Error fetching user pools:', error);
@@ -184,7 +181,7 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                     <div className="flex flex-col md:flex-row justify-between items-center border border-border rounded-lg shadow-lg p-6">
                         <div>
                             <h1 className="text-4xl font-bold text-foreground mb-2">{singlePool.poolName}</h1>
-                            <p className="text-muted-foreground">Created on {singlePool.createdAt}</p>
+                            <p className="text-muted-foreground">Created on {formatReadableDateOnly(singlePool.createdAt)}</p>
                         </div>
                         <div className="flex space-x-4 mt-4 md:mt-0">
                             <Button onClick={handleDepositFunds} className="bg-green-500 hover:bg-green-600">
@@ -203,8 +200,8 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="text-3xl font-bold">${singlePool.poolBalanceInUSD}</div>
-                                <p className="text-sm text-gray-500">
-                                    Initial: ${(singlePool.totalValue / 10 ** 6).toLocaleString()}
+                                <p className="text-sm text-gray-400">
+                                    Initial Balance: ${(singlePool.totalValue / 10 ** 6).toLocaleString()}
                                 </p>
                             </CardContent>
                         </Card>
@@ -215,14 +212,14 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="text-3xl font-bold">
-                                    {parseFloat(calculatePerformance()) > 0 ?
-                                        <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{calculatePerformance()}%</div>
-                                        : parseFloat(calculatePerformance()) < 0 ?
-                                            <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{calculatePerformance()}%</div>
-                                            : <>{calculatePerformance()} %</>
-                                    }
+                                    {singlePool.performance ? singlePool.performance > 0 ?
+                                        <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{singlePool.performance}%</div>
+                                        : singlePool.performance < 0 ?
+                                            <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{singlePool.performance}%</div>
+                                            : <>{singlePool.performance} %</>
+                                        : "~ 0%"}
                                 </div>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-400">
                                     Since creation
                                 </p>
                             </CardContent>
@@ -230,13 +227,10 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
 
                         <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                             <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
-                                <CardTitle className="text-lg font-medium">Last Rebalance</CardTitle>
+                                <CardTitle className="text-lg font-medium">Threshold</CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6">
-                                <div className="text-3xl font-bold">{poolData.lastRebalance}</div>
-                                <p className="text-sm text-gray-500">
-                                    Threshold: {singlePool.rebalancingThreshold}%
-                                </p>
+                                <div className="text-3xl font-bold">{singlePool.rebalancingThreshold}%</div>
                             </CardContent>
                         </Card>
 
@@ -245,9 +239,9 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                 <CardTitle className="text-lg font-medium">Created On</CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6">
-                                <div className="text-3xl font-bold">{poolData.createdAt}</div>
-                                <p className="text-sm text-gray-500">
-                                    {poolData.createdAt}
+                                <div className="text-2xl font-bold">{formatReadableDateOnly(singlePool.createdAt)}</div>
+                                <p className="text-sm text-gray-400">
+                                    {formatReadableTimeWithTimeZone(singlePool.createdAt)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -289,9 +283,9 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                                                 : 0}%</span>
                                         </div>
                                         <div className="flex justify-between text-sm text-gray-500">
-                                            <span>Initial: {asset.proportion}%</span>
+                                            <span>Initial Allocation: <span className='text-foreground'>{asset.proportion}%</span></span>
                                             {/* <span>Initial Price: ${asset.amount.toLocaleString()}</span> */}
-                                            <span>Initial Price: $2</span>
+                                            <span>Initial Price: <span className='text-foreground'>$2</span></span>
                                         </div>
                                     </div>
                                 ))}
@@ -428,12 +422,6 @@ export default function SinglePoolPage({ prices }: SinglePoolPageProps) {
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="text-3xl font-bold">
-                                    {parseFloat(calculatePerformance()) > 0 ?
-                                        <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{calculatePerformance()}%</div>
-                                        : parseFloat(calculatePerformance()) < 0 ?
-                                            <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{calculatePerformance()}%</div>
-                                            : <>{calculatePerformance()} %</>
-                                    }
                                 </div>
                                 <p className="text-sm text-gray-500">
                                     Since creation
