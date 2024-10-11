@@ -57,7 +57,7 @@ const UserPoolsList: React.FC = () => {
 
     useEffect(() => {
         if (address) {
-            fetchUserPools("TYZGL81XhUUmke5RHfX1waTkuqy6tVo8SA");
+            fetchUserPools(address);
         }
     }, [address])
 
@@ -169,7 +169,7 @@ const UserPoolsList: React.FC = () => {
                     </div>
                 ) : (
                     <div>
-                        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
                             {filteredPools.length > 0 ? (
                                 filteredPools.map((pool) => (
                                     <Link href={`/pool/${pool.poolAddress}`} key={pool._id}>
@@ -185,7 +185,7 @@ const UserPoolsList: React.FC = () => {
                                             <CardContent className="pt-6 flex-1 bg-background">
                                                 <div className="flex justify-between items-center mb-4">
                                                     <span className="text-sm font-medium text-muted-foreground">Balance</span>
-                                                    <span className="text-2xl font-bold">${pool.poolBalanceInUSD}</span>
+                                                    <span className="text-2xl font-bold"><span className='text-lg text-muted-foreground font-semibold'>$</span>{pool.poolBalanceInUSD}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center mb-6">
                                                     <span className="text-sm font-medium text-muted-foreground">Performance</span>
@@ -195,14 +195,14 @@ const UserPoolsList: React.FC = () => {
                                     </div> */}
                                                 </div>
                                                 <div className="mb-6">
-                                                    <div className="flex justify-between items-center mb-2">
+                                                    <div className="flex justify-between items-center mb-3">
                                                         <span className="text-sm font-medium text-muted-foreground">Asset Allocation</span>
                                                         <BarChart2 className="h-4 w-4 text-muted-foreground" />
                                                     </div>
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-4">
                                                         {pool.tokens.map((asset, index) => (
                                                             <div key={asset.symbol} className="flex items-center">
-                                                                <span className="w-12 text-sm font-medium text-foreground">{asset.symbol}</span>
+                                                                <span className=" text-sm font-medium text-foreground">{asset.symbol}</span>
                                                                 <Progress.Root
                                                                     className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
                                                                     value={pool.currentTokenProportion
@@ -218,7 +218,7 @@ const UserPoolsList: React.FC = () => {
                                                                     />
                                                                 </Progress.Root>
                                                                 {/* <Progress value={asset.allocation} className="flex-grow mx-2" /> */}
-                                                                <span className="w-8 text-sm text-right">{(pool.currentTokenProportion
+                                                                <span className="w-12 text-sm text-right">{(pool.currentTokenProportion
                                                                     ? Number(pool.currentTokenProportion[index]) / 100
                                                                     : 0)}%</span>
                                                             </div>

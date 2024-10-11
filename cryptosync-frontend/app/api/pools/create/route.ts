@@ -7,11 +7,15 @@ interface CreatePoolRequest extends Request {
   poolName: string;
   poolAddress: string;
   totalValue: number;
-  tokens: Array<{ symbol: string; amount: number; proportion: number }>;
+  tokens: Array<{
+    symbol: string;
+    amount: number;
+    proportion: number;
+    takeProfitPercentage: number;
+    stopLossAtTokenPrice: number;
+  }>;
   rebalancingThreshold: number;
   rebalancingFrequency: string;
-  takeProfitPercentage?: number;
-  stopLossPercentage?: number;
 }
 
 export async function POST(req: CreatePoolRequest) {
@@ -27,8 +31,6 @@ export async function POST(req: CreatePoolRequest) {
       tokens,
       rebalancingThreshold,
       rebalancingFrequency,
-      takeProfitPercentage,
-      stopLossPercentage,
     } = await req.json(); // Parse the JSON body
 
     // Validate required fields
@@ -55,8 +57,6 @@ export async function POST(req: CreatePoolRequest) {
       tokens,
       rebalancingThreshold,
       rebalancingFrequency,
-      takeProfitPercentage,
-      stopLossPercentage,
     });
     // Check if user exists, if not create a new user
     let user: IUser | null = await User.findOne({
@@ -64,7 +64,7 @@ export async function POST(req: CreatePoolRequest) {
     });
     if (!user) {
       user = new User({ userWalletAddress });
-      console.log('user',user);
+      console.log("user", user);
       console.log("inside adding user");
       await user.save();
     }
@@ -77,8 +77,6 @@ export async function POST(req: CreatePoolRequest) {
       tokens,
       rebalancingThreshold,
       rebalancingFrequency,
-      takeProfitPercentage,
-      stopLossPercentage,
     });
 
     await pool.save();

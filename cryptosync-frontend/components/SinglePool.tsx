@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -68,6 +68,8 @@ export default function SinglePoolPage() {
     const [singlePool, setSinglePool] = useState<Pool>()
     const [loading, setLoading] = useState<boolean>(false)
     const calculatePerformance = async (currentBalance: number, initialBalance: number) => {
+        console.log("first value current balance", currentBalance)
+        console.log("first value initialBalance", initialBalance)
         const performance = ((currentBalance - initialBalance) / initialBalance) * 100
         return performance
     }
@@ -121,7 +123,7 @@ export default function SinglePoolPage() {
             const PoolContract = await tronWeb.contract(abi, poolAddress);
 
             const result = await PoolContract.getTokenBalanceInUSD().call();
-
+            console.log("result from token contract", result)
             // result contains totalValueInUSD and valueProportions
             const totalValueInUSD = result.totalValueInUSD;
             const valueProportions = result.valueProportions;
@@ -147,8 +149,10 @@ export default function SinglePoolPage() {
             const poolDataa = data[0];
 
             const poolBalanceInUSD = await getTokenBalanceInUSDtry(data[0].poolAddress);
+            console.log("poolBalanceInUSD", poolBalanceInUSD)
+            console.log("pool Initial", poolDataa.totalValue)
 
-            const poolPerformance = await calculatePerformance(poolBalanceInUSD ? poolBalanceInUSD.totalValue : 0, poolDataa.totalValue)
+            const poolPerformance = await calculatePerformance(poolBalanceInUSD ? poolBalanceInUSD.totalValue / 10 ** 6 : 0, poolDataa.totalValue)
             const usdc = poolBalanceInUSD ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
             const newData = { ...poolDataa, "poolBalanceInUSD": usdc, currentTokenProportion: poolBalanceInUSD?.tokenProportion, performance: poolPerformance }
             setSinglePool(newData);
@@ -313,7 +317,7 @@ export default function SinglePoolPage() {
                                 <CardContent className="pt-6">
                                     <div className="text-3xl font-bold">${singlePool.poolBalanceInUSD}</div>
                                     <p className="text-sm text-gray-400">
-                                        Initial Balance: ${(singlePool.totalValue / 10 ** 6).toLocaleString()}
+                                        Initial Balance: ${(singlePool.totalValue).toLocaleString()}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -325,10 +329,10 @@ export default function SinglePoolPage() {
                                 <CardContent className="pt-6">
                                     <div className="text-3xl font-bold">
                                         {singlePool.performance ? singlePool.performance > 0 ?
-                                            <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{singlePool.performance}%</div>
+                                            <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{singlePool.performance.toFixed(2)}%</div>
                                             : singlePool.performance < 0 ?
-                                                <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{singlePool.performance}%</div>
-                                                : <>{singlePool.performance} %</>
+                                                <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{singlePool.performance.toFixed(2)}%</div>
+                                                : <>{singlePool.performance.toFixed(2)} %</>
                                             : "~ 0%"}
                                     </div>
                                     <p className="text-sm text-gray-400">
@@ -420,8 +424,8 @@ export default function SinglePoolPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {poolData.transactions.map((tx) => (
-                                            <>
+                                        {poolData.transactions.map((tx, index) => (
+                                            <React.Fragment key={index}>
                                                 <TableRow key={tx.id} className="cursor-pointer hover:bg-secondary" onClick={() => toggleRowExpansion(tx.id)}>
                                                     <TableCell>
                                                         <div className="flex items-center space-x-2">
@@ -484,7 +488,7 @@ export default function SinglePoolPage() {
                                                         </TableCell>
                                                     </TableRow>
                                                 )}
-                                            </>
+                                            </React.Fragment>
                                         ))}
                                     </TableBody>
                                 </Table>

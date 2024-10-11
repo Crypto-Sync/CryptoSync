@@ -4,6 +4,8 @@ interface IToken {
   symbol: string;
   amount: number;
   proportion: number;
+  takeProfitPercentage: number;
+  stopLossAtTokenPrice: number;
 }
 
 export interface IPool extends Document {
@@ -14,8 +16,6 @@ export interface IPool extends Document {
   tokens: IToken[];
   rebalancingThreshold: number;
   rebalancingFrequency: string;
-  takeProfitPercentage?: number;
-  stopLossPercentage?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +24,8 @@ const TokenSchema = new mongoose.Schema<IToken>({
   symbol: String,
   amount: Number,
   proportion: Number,
+  takeProfitPercentage: Number,
+  stopLossAtTokenPrice: Number,
 });
 
 const PoolSchema = new mongoose.Schema<IPool>({
@@ -34,8 +36,6 @@ const PoolSchema = new mongoose.Schema<IPool>({
   tokens: [TokenSchema],
   rebalancingThreshold: { type: Number, required: true },
   rebalancingFrequency: { type: String, required: true },
-  takeProfitPercentage: { type: Number, default: null },
-  stopLossPercentage: { type: Number, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
