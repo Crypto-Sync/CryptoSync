@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as Select from '@radix-ui/react-select'
 // import * as SliderPrimitive from '@radix-ui/react-slider';
 import { ChevronDown, Check, Info } from 'lucide-react';
@@ -49,6 +49,7 @@ const rebalancingOptions: RebalancingOption[] = [
 // TokenSlider component props
 interface TokenSliderProps {
     token: Token;
+    tokenBalance: number;
     onPercentageChange: (tokenId: string, percentage: number, amount: number) => void;
     onTakeProfitChange: (tokenId: string, percentage: number) => void;
     onStopLossChange: (tokenId: string, percentage: number) => void;
@@ -57,7 +58,10 @@ interface TokenSliderProps {
     tokenPrice: number;
 }
 
-function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLossChange, takeProfit, stopLoss, tokenPrice }: TokenSliderProps) {
+function TokenSlider({ token, tokenPrice, tokenBalance, onPercentageChange, onTakeProfitChange, onStopLossChange, takeProfit, stopLoss }: TokenSliderProps) {
+
+
+
     // const ethPriceInUSD: number = prices ? prices.eth : 0;
     // const [sliderValue, setSliderValue] = useState<number>(0);
 
@@ -112,7 +116,8 @@ function TokenSlider({ token, onPercentageChange, onTakeProfitChange, onStopLoss
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="text-forground font-semibold">{token?.balance.toFixed(4)}</p>
+                    {/* <p className="text-forground font-semibold">{token?.balance.toFixed(4)}</p> */}
+                    <p className="text-forground font-semibold">{tokenBalance.toFixed(4)}</p>
                     <p className="text-muted-foreground text-sm">Balance</p>
                 </div>
             </div>
@@ -292,6 +297,8 @@ export default function CreatePool() {
     const [tokenValues, setTokenValues] = useState<{ [key: string]: number }>({})
     const [totalValue, setTotalValue] = useState(0)
     const [tokenPrices, setTokenPrices] = useState<{ [key: string]: number }>({});
+    const [tokenBalances, setTokenBalances] = useState<{ [key: string]: number }>({});
+
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tronWeb, setTronWeb] = useState<any>(null);
@@ -373,22 +380,48 @@ export default function CreatePool() {
         }
     }, [tronWeb, userAddress]);
 
-    // useEffect(() => {
-    //     const values: { [key: string]: number } = {}
-    //     let total = 0
 
-    //     selectedTokens.forEach((tokenId) => {
-    //         const amount = tokenAmounts[tokenId] || 0
-    //         const price = 1
-    //         // const price = prices[tokenId as keyof CryptoPrices] || 0
-    //         const value = amount * price
-    //         values[tokenId] = value
-    //         total += value
-    //     })
+    const fetchTokenBalances = async (
+        selectedTokens: string[],
+        tokens: Token[],
+        userAddress: string
+    ) => {
+        const balances: { [key: string]: number } = {};
 
-    //     setTokenValues(values)
-    //     setTotalValue(total)
-    // }, [selectedTokens, tokenAmounts])
+        // Fetch balances for all selected tokens in parallel
+        await Promise.all(
+            selectedTokens.map(async (tokenId) => {
+                const token = tokens.find((t) => t.id === tokenId);
+                if (token) {
+                    try {
+                        const tokenContract = await tronWeb.contract().at(token.tokenAddress);
+                        const balanceRaw = await tokenContract.balanceOf(userAddress).call();
+                        const balance = parseInt(balanceRaw, 10) / 10 ** 18; // Convert from Sun to actual token value
+                        balances[tokenId] = balance;
+                        console.log(`Balance for ${token.name}:`, balance);
+                    } catch (error) {
+                        console.error(`Error fetching balance for ${token.name}:`, error);
+                        balances[tokenId] = 0; // Default to 0 if there's an error
+                    }
+                }
+            })
+        );
+
+        return balances;
+    };
+
+    const handleFetchBalances = useCallback(async () => {
+        if (tronWeb && userAddress && selectedTokens.length > 0) {
+            const balances = await fetchTokenBalances(selectedTokens, tokens, userAddress);
+            setTokenBalances(balances); // Update the state with fetched balances
+        }
+    }, [tronWeb, userAddress, selectedTokens]);
+
+    // Trigger the fetch function when dependencies change
+    useEffect(() => {
+        handleFetchBalances();
+    }, [handleFetchBalances]);
+
 
     useEffect(() => {
         const fetchPricesAndCalculate = async () => {
@@ -564,10 +597,6 @@ export default function CreatePool() {
                 const tokenAddress = params[0][i];  // Get the current token address
                 const tokenContract = await tronWeb.contract().at(tokenAddress);
 
-                // Fetch the balance of the user for the current token
-                const balance = await tokenContract.balanceOf(userAddress).call();
-                console.log(`balance of token ${i}`, balance);
-
                 // Fetch the allowance of the user for the current token
                 const allowance = await tokenContract.allowance(userAddress, contractAddress).call();
 
@@ -626,39 +655,9 @@ export default function CreatePool() {
             }
         }
 
-        // const getPoolValue = async () => {
-        //     try {
-        //         // Assuming params[0] is an array of two tokens [tokenA, tokenB]
-        //         const tokens = params[0];
-        //         console.log("tokens", tokens);
-
-        //         // Fetch the price for the first token (assuming BigNumber is returned)
-        //         const priceTokenA = await factoryContract.getOnChainPrice(tokens[0]).call();
-        //         console.log('priceTokenA', parseInt(priceTokenA, 10));
-
-        //         // Fetch the price for the second token (assuming BigNumber is returned)
-        //         const priceTokenB = await factoryContract.getOnChainPrice(tokens[1]).call();
-        //         console.log('priceTokenb', parseInt(priceTokenB, 10));
-
-
-        //         const amountTokenA = Number(tokenProportions[0].amount);
-        //         const amountTokenB = Number(tokenProportions[1].amount);
-
-        //         // Calculate total value: price * amount for both tokens
-        //         const totalValue = (parseInt(priceTokenA, 10) * amountTokenA) + (parseInt(priceTokenB, 10) * amountTokenB);
-
-        //         // Convert the result to string to return
-        //         return totalValue;
-        //     } catch (error) {
-        //         console.error("Error fetching pool value:", error);
-        //         return null;
-        //     }
-        // };
 
         const poolAddress = await getPoolAddress();
         console.log(poolAddress);
-        // const valueOfPool = await getPoolValue();
-        // console.log('valueOfPool', valueOfPool);
 
         createPool({
             poolAddress,//need to change this becasue it is stroing hash of address
@@ -710,7 +709,7 @@ export default function CreatePool() {
                             takeProfit={takeProfitPercentages[tokenId] || 0}
                             stopLoss={stopLossPercentages[tokenId] || 0}
                             tokenPrice={tokenPrices[tokenId]}
-                        // tokenPrice={2}
+                            tokenBalance={tokenBalances[tokenId] || 0} // Pass the real token balance
                         />
                     </div>
                 ))}
