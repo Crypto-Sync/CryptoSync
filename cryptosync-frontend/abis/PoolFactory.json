@@ -1,9 +1,15 @@
 {
     "contractName": "PoolFactory",
-    "contractAddress": "TTXnecMS7yK2M3kkdF5AYpUEswXXJU5RpD",
+    "contractAddress": "TGpBZHgK8qb221AQFNxSmceMR3MRwFzNVK",
     "abi": [
     {
-      "inputs": [],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_sunswapFactory",
+          "type": "address"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
@@ -232,19 +238,26 @@
       "type": "function"
     },
     {
-      "inputs": [
+      "inputs": [],
+      "name": "stableCoin",
+      "outputs": [
         {
           "internalType": "address",
-          "name": "token",
+          "name": "",
           "type": "address"
         }
       ],
-      "name": "testPrice",
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sunswapFactory",
       "outputs": [
         {
-          "internalType": "uint160",
-          "name": "sqrtPriceX96",
-          "type": "uint160"
+          "internalType": "address",
+          "name": "",
+          "type": "address"
         }
       ],
       "stateMutability": "view",
@@ -259,19 +272,6 @@
         }
       ],
       "name": "tokenPoolAddresses",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "uniswapFactory",
       "outputs": [
         {
           "internalType": "address",
