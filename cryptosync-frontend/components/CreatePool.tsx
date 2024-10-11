@@ -483,16 +483,16 @@ export default function CreatePool() {
 
         console.log("data", data);
         // 2.476285 =>total value
-        // const response = await fetch('/api/pools/create', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify(data),
-        // });
+        const response = await fetch('/api/pools/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
 
-        // const result = await response.json();
-        // console.log(result);
+        const result = await response.json();
+        console.log(result);
     }
 
     const handleCreatePool = async () => {
@@ -599,12 +599,12 @@ export default function CreatePool() {
             console.log('userAddress', userAddress);
             console.log('params in contract', params);
             // Now create the pool
-            // const tx = await factoryContract.createPool(params).send({
-            //     feeLimit: 1000 * 1e6, // Transaction fee limit
-            //     callValue: 0, // No TRX to send with this call
-            //     from: userAddress // User pays gas
-            // });
-            // console.log(tx)
+            const tx = await factoryContract.createPool(params).send({
+                feeLimit: 1000 * 1e6, // Transaction fee limit
+                callValue: 0, // No TRX to send with this call
+                from: userAddress // User pays gas
+            });
+            console.log(tx)
 
         } catch (error) {
             console.error('Error creating pool:', error);
