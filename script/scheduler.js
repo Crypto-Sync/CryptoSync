@@ -1,6 +1,6 @@
 import { TronWeb } from 'tronweb';
 import fs from 'fs';
-import poolContractABI from '../cryptosync-frontend/abis/poolContract.json' assert { type: 'json' };
+import poolContractABI from '../cryptosync-frontend/abis/PoolContract.json' assert { type: 'json' };
 import dotenv from "dotenv";
 import axios from 'axios';
 
@@ -38,7 +38,7 @@ async function checkAndRebalancePools() {
     // Process pools one by one
     for (const pool of pools) {
 
-      if(pool.poolAddress == null || pool.rebalancingFrequency != '120') {
+      if(pool.poolAddress == null || pool.rebalancingFrequency > '20') {
         continue;
       } 
       // console.log("Pool in checkAndRebalance", pool);
@@ -58,12 +58,14 @@ async function checkAndRebalance(pool) {
 
     // Fetch timePeriod and lastChecked
     const timePeriodHex = await poolContract.timePeriod().call();
+
+    const currentTime = Math.floor(new Date().getTime() / 1000);
     const lastCheckedHex = await poolContract.lastChecked().call();
 
-    const timePeriod = parseInt(timePeriodHex._hex, 16);
-    const lastChecked = parseInt(lastCheckedHex._hex, 16);
+    const timePeriod = Number(timePeriodHex);
+    const lastChecked = Number(lastCheckedHex);
 
-    const currentTime = Math.floor(Date.now() / 1000);
+    console.log(currentTime, timePeriod, lastChecked);
 
     // Check if rebalance is due
     // if (currentTime >= lastChecked + timePeriod) {
@@ -88,7 +90,7 @@ async function checkAndRebalance(pool) {
         shouldPollResponse: true
       });
 
-      // console.log(`Rebalanced pool ${pool.poolAddress}: ${tx}`);
+      console.log(`Rebalanced pool ${pool.poolAddress}: ${tx}`);
       
       // Fetch after status
       const afterStatus = await getPoolStatus(pool.poolAddress, tokens);

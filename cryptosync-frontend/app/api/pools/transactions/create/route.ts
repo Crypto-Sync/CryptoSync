@@ -45,13 +45,13 @@ export async function POST(req: Request) {
     }
 
     // Verify if the user exists
-    const user = await User.findById(userId);
+    const user = await User.findOne({ userWalletAddress: userId });
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     // Verify if the pool exists
-    const pool = await Pool.findById(poolId);
+    const pool = await Pool.findOne({poolAddress: poolId });
     if (!pool) {
       return NextResponse.json({ message: "Pool not found" }, { status: 404 });
     }
