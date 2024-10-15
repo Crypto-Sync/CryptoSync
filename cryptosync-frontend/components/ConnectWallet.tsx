@@ -1,51 +1,87 @@
-'use client'
+'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    WalletActionButton,
-} from '@tronweb3/tronwallet-adapter-react-ui';
+import { WalletActionButton } from '@tronweb3/tronwallet-adapter-react-ui';
 import { TronLinkAdapter } from '@tronweb3/tronwallet-adapters';
-
 
 export default function ConnectWallet() {
     const adapter = useMemo(() => new TronLinkAdapter(), []);
-
-    const [hasAttemptedSwitch, setHasAttemptedSwitch] = useState(false);
-    const targetChainId = "0xcd8690dc"; // The chain ID you want to switch to
+    const [currentChain, setCurrentChain] = useState<string>('');
+    const targetChainId = '0xcd8690dc'; // Target chain ID
 
     const checkAndSwitchChain = useCallback(async () => {
-        if (!hasAttemptedSwitch && adapter.connected) {
-            setHasAttemptedSwitch(true);
-            try {
-                await adapter.switchChain(targetChainId);
-                console.log('Switched to target chain:', targetChainId);
-            } catch (error) {
-                // Reset the attempt flag if the switch failed (e.g., user rejected)
-                setHasAttemptedSwitch(false);
-            }
+        if (adapter.connected) {
+            const network = await adapter.network();
+            setCurrentChain(network.chainId);
         }
-    }, [adapter, targetChainId, hasAttemptedSwitch]);
+    }, [adapter]);
+
+    // Detect when chain ID changes in the wallet
+    const handleNetworkChange = useCallback(
+        (chainData: unknown) => {
+            const newChainData = chainData as { chainId: string };
+            console.log('Chain ID changed in wallet:', newChainData);
+            setCurrentChain(newChainData?.chainId as string);
+        },
+        []
+    );
 
     useEffect(() => {
-        if (!hasAttemptedSwitch) {
-            console.log("calledddddddddddddddddddddddd")
-            checkAndSwitchChain()
+        if (adapter) {
+            checkAndSwitchChain(); // Initial chain check
+
+            // Listen for network changes in the wallet
+            adapter.on('chainChanged', handleNetworkChange);
         }
+
+        // Cleanup event listener when component unmounts
         return () => {
-            setHasAttemptedSwitch(false)
+            adapter.off('chainChanged', handleNetworkChange);
+        };
+    }, [adapter, checkAndSwitchChain, handleNetworkChange]);
+
+    const customSwitchChain = useCallback(async () => {
+        try {
+            await adapter.switchChain(targetChainId);
+            console.log('Switched to target chain:', targetChainId);
+        } catch (error) {
+            console.error('Error in switching chainId', error);
         }
-    }, [checkAndSwitchChain, hasAttemptedSwitch])
+    }, [adapter, targetChainId]);
+
+
 
     return (
         <>
-            <UIComponent />
+            <UIComponent
+                currentChain={currentChain}
+                targetChainId={targetChainId}
+                onSwitchChain={customSwitchChain}
+            />
+
         </>
     );
 }
 
-function UIComponent() {
+interface UIComponentProps {
+    currentChain: string;
+    targetChainId: string;
+    onSwitchChain: () => void;
+}
+
+function UIComponent({ currentChain, targetChainId, onSwitchChain }: UIComponentProps) {
     return (
         <div>
-            <WalletActionButton />
+            {currentChain && currentChain !== targetChainId ? (
+                <button
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg flex items-center"
+                    onClick={onSwitchChain}
+                >
+                    Wrong Chain
+                </button>
+            ) : (
+                <WalletActionButton />
+            )}
         </div>
     );
 }
+
