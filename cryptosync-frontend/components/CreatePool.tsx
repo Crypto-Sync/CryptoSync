@@ -125,7 +125,10 @@ function TokenSlider({ token, tokenPrice, tokenBalance, onPercentageChange, onTa
                 </div>
             </div>
             <div className="flex flex-col justify-between text-sm mb-2 mt-4">
-                <span className="text-primary font-semibold mb-2">Enter Amount<span className='text-muted-foreground text-sm ml-2'>({token?.name})</span></span>
+                <div className='flex justify-between items-center mb-2'>
+                    <span className="text-primary font-semibold">Amount<span className='text-muted-foreground text-sm ml-2'>({token?.name})</span></span>
+                    <span className='text-muted-foreground text-sm'>${tokenPrice ? tokenPrice.toFixed(3) : 0}/{token.name}</span>
+                </div>
                 <div className='flex items-center justify-center gap-2'>
                     <input
                         type="number"
@@ -684,6 +687,10 @@ export default function CreatePool() {
 
     };
 
+
+    useEffect(() => {
+        console.log("tokenPrices :", tokenPrices)
+    }, [tokenPrices])
     return (
         <div className="bg-background p-6 rounded-xl shadow-custom-strong max-w-3xl w-full">
             <h1 className="text-3xl font-bold text-foreground mb-8 mt-4 text-center">Create Pool</h1>
