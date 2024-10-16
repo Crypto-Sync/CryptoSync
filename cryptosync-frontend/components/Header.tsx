@@ -33,7 +33,7 @@ export function Header() {
         )
     }
     return (
-        <header className="bg-background/80 sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur overflow-x-hidden overflow-y-auto">
+        <header className="bg-background/80 sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur">
             <div className="container mx-auto px-4">
                 <div className="flex h-16 items-center justify-between">
                     <Link className="flex items-center space-x-2" href="/">
@@ -88,7 +88,7 @@ export function Header() {
 
                                 <DrawerFooter>
                                     <DrawerClose>
-                                        <Button variant="outline">Close</Button>
+                                        Close
                                     </DrawerClose>
                                 </DrawerFooter>
                             </DrawerContent>
