@@ -110,10 +110,10 @@ const UserPoolsList: React.FC = () => {
                 const totalValue = poolBalanceInUSD?.totalValue ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
                 return { ...pool, poolBalanceInUSD: totalValue, currentTokenProportion: poolBalanceInUSD?.tokenProportion }; // Return a new object with `poolBalanceInUSD` added
             }));
-            console.log(updatedPools);
+            // console.log(updatedPools);
             setUserPools(updatedPools);
             setFilteredPools(updatedPools);
-            console.log('Fetched pools for user:', data);
+            console.log('Fetched pools for user:', updatedPools);
         } catch (error) {
             console.error('Error fetching user pools:', error);
         } finally {
@@ -127,6 +127,7 @@ const UserPoolsList: React.FC = () => {
         console.log(`Navigating to pool ${poolId}`)
         // Example: router.push(`/pools/${poolId}`)
     }
+
 
 
 
@@ -197,32 +198,49 @@ const UserPoolsList: React.FC = () => {
                                                 <div className="mb-6">
                                                     <div className="flex justify-between items-center mb-3">
                                                         <span className="text-sm font-medium text-muted-foreground">Asset Allocation</span>
-                                                        <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                                                        <span className='text-sm font-medium text-muted-foreground gap-1 flex items-center'>Current<BarChart2 className="h-4 w-4 text-muted-foreground" /></span>
                                                     </div>
                                                     <div className="space-y-4">
                                                         {pool.tokens.map((asset, index) => (
-                                                            <div key={asset.symbol} className="flex items-center">
-                                                                <span className=" text-sm font-medium text-foreground">{asset.symbol}</span>
-                                                                <Progress.Root
-                                                                    className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
-                                                                    value={pool.currentTokenProportion
+                                                            <>
+                                                                <div key={asset.symbol} className="flex items-center">
+                                                                    <span className=" text-sm font-medium text-foreground">{asset.symbol}</span>
+                                                                    <Progress.Root
+                                                                        className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
+                                                                        value={pool.currentTokenProportion
+                                                                            ? Number(pool.currentTokenProportion[index]) / 100
+                                                                            : 0}>
+                                                                        <Progress.Indicator
+                                                                            className="h-1/2 w-full flex-1 transition-all bg-accent"
+                                                                            style={{
+                                                                                transform: `translateX(-${100 - (pool.currentTokenProportion
+                                                                                    ? Number(pool.currentTokenProportion[index]) / 100
+                                                                                    : 0)}%)`
+                                                                            }}
+                                                                        />
+                                                                        <Progress.Indicator
+                                                                            className="h-1/2 w-full flex-1 transition-all bg-gray-500 dark:bg-gray-400"
+                                                                            style={{
+                                                                                transform: `translateX(-${100 - asset.proportion}%)`
+                                                                            }}
+                                                                        />
+                                                                    </Progress.Root>
+                                                                    <span className="w-12 text-sm text-right">{(pool.currentTokenProportion
                                                                         ? Number(pool.currentTokenProportion[index]) / 100
-                                                                        : 0}>
-                                                                    <Progress.Indicator
-                                                                        className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-400"
-                                                                        style={{
-                                                                            transform: `translateX(-${100 - (pool.currentTokenProportion
-                                                                                ? Number(pool.currentTokenProportion[index]) / 100
-                                                                                : 0)}%)`
-                                                                        }}
-                                                                    />
-                                                                </Progress.Root>
-                                                                {/* <Progress value={asset.allocation} className="flex-grow mx-2" /> */}
-                                                                <span className="w-12 text-sm text-right">{(pool.currentTokenProportion
-                                                                    ? Number(pool.currentTokenProportion[index]) / 100
-                                                                    : 0)}%</span>
-                                                            </div>
+                                                                        : 0)}%</span>
+                                                                </div>
+                                                            </>
                                                         ))}
+                                                        <div className="flex justify-between text-sm font-medium text-muted-foreground mt-2">
+                                                            <div className="flex items-center">
+                                                                <div className="w-3 h-3 bg-gray-500 dark:bg-gray-400 mr-1"></div>
+                                                                <span>Initial</span>
+                                                            </div>
+                                                            <div className="flex items-center ">
+                                                                <div className="w-3 h-3 bg-accent mr-1"></div>
+                                                                <span>Current</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm text-muted-foreground">

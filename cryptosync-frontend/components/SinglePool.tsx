@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight } from 'lucide-react'
+import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight, ChevronLeft } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import * as Progress from "@radix-ui/react-progress"
@@ -9,6 +9,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { TronWeb } from "tronweb"
 import { abi } from '@/abis/PoolContract.json'
 import { formatReadableDateOnly, formatReadableTimeWithTimeZone } from '@/lib/dateFormatter'
+import Link from 'next/link'
 // Mock data - replace with actual data fetching in a real application
 const poolData = {
     name: "Balanced Growth Pool",
@@ -183,130 +184,25 @@ export default function SinglePoolPage() {
     )
 
     return (
-        <div className="bg-background shadow-custom-strong rounded-xl container min-h-screen p-8">
-            {loading ?
-                <div className=" mx-auto space-y-8">
-                    <div className='flex items-center gap-4'>
-                        <div className="animate-spin rounded-full border-2 border-current border-t-transparent h-5 w-5"></div>
-                        <span className='animate-pulse text-secondary-foreground'>Fetching pool details...</span>
-                    </div>
-
-                    <div className="animate-pulse bg-gray-200 dark:bg-gray-800 flex flex-col md:flex-row justify-between items-center border border-border rounded-lg shadow-lg">
-                        <div className='h-32 w-full '></div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
-                                <CardTitle className="text-lg font-medium">Total Balance</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-6 space-y-3">
-                                <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
-                                <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
-                                <CardTitle className="text-lg font-medium">Performance</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-6 space-y-3">
-                                <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
-                                <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
-                                <CardTitle className="text-lg font-medium">Threshold</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-6 space-y-3">
-                                <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
-                                <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-600 text-white">
-                                <CardTitle className="text-lg font-medium">Created On</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-6 space-y-3">
-                                <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
-                                <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold">Asset Allocation</CardTitle>
-                            <CardDescription>Compare initial and current allocations</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <div className="rounded-lg space-x-4 h-12 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                    <div className="rounded-lg space-x-4 h-12 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                    <div className="rounded-lg space-x-4 h-12 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                    <div className="flex justify-between text-sm text-gray-500">
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
-                            <CardDescription>Recent activities in your pool</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader className='hover:bg-transparent'>
-                                    <TableRow >
-                                        <TableHead>Action</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Details</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                            </Table>
-                            <div className="space-y-6 mt-4">
-                                <div className="space-y-2">
-                                    <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                    <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                    <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                    <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div> : singlePool && singlePool.poolAddress ?
+        <>
+            <div
+                className='container px-8 pb-4'>
+                <Link
+                    href={"/dashboard"}
+                    className='flex items-center hover:text-accent font-semibold'>
+                    <ChevronLeft />Back to Dashboard
+                </Link>
+            </div>
+            <div className="bg-background shadow-custom-strong rounded-xl container min-h-screen p-8">
+                {loading ?
                     <div className=" mx-auto space-y-8">
-                        <div className="flex flex-col md:flex-row justify-between items-center border border-border rounded-lg shadow-lg p-6">
-                            <div>
-                                <h1 className="text-4xl font-bold text-foreground mb-2">{singlePool.poolName}</h1>
-                                <p className="text-muted-foreground">Created on {formatReadableDateOnly(singlePool.createdAt)}</p>
-                            </div>
-                            <div className="flex space-x-4 mt-4 md:mt-0">
-                                <Button onClick={handleDepositFunds} className="bg-green-500 hover:bg-green-600">
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Deposit More Funds
-                                </Button>
-                                <Button onClick={handleModifyPool} variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50">
-                                    <Settings className="mr-2 h-4 w-4" /> Modify Pool
-                                </Button>
-                            </div>
+                        <div className='flex items-center gap-4'>
+                            <div className="animate-spin rounded-full border-2 border-current border-t-transparent h-5 w-5"></div>
+                            <span className='animate-pulse text-secondary-foreground'>Fetching pool details...</span>
+                        </div>
+
+                        <div className="animate-pulse bg-gray-200 dark:bg-gray-800 flex flex-col md:flex-row justify-between items-center border border-border rounded-lg shadow-lg">
+                            <div className='h-32 w-full '></div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -314,10 +210,9 @@ export default function SinglePoolPage() {
                                 <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
                                     <CardTitle className="text-lg font-medium">Total Balance</CardTitle>
                                 </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="text-3xl font-bold">${singlePool.poolBalanceInUSD}</div>
-                                    <p className="text-sm text-gray-400">
-                                        Initial Balance: ${(singlePool.totalValue).toLocaleString()}
+                                <CardContent className="pt-6 space-y-3">
+                                    <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
+                                    <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
                                     </p>
                                 </CardContent>
                             </Card>
@@ -326,17 +221,9 @@ export default function SinglePoolPage() {
                                 <CardHeader className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
                                     <CardTitle className="text-lg font-medium">Performance</CardTitle>
                                 </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="text-3xl font-bold">
-                                        {singlePool.performance ? singlePool.performance > 0 ?
-                                            <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{singlePool.performance.toFixed(2)}%</div>
-                                            : singlePool.performance < 0 ?
-                                                <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{singlePool.performance.toFixed(2)}%</div>
-                                                : <>{singlePool.performance.toFixed(2)} %</>
-                                            : "~ 0%"}
-                                    </div>
-                                    <p className="text-sm text-gray-400">
-                                        Since creation
+                                <CardContent className="pt-6 space-y-3">
+                                    <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
+                                    <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
                                     </p>
                                 </CardContent>
                             </Card>
@@ -345,8 +232,10 @@ export default function SinglePoolPage() {
                                 <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
                                     <CardTitle className="text-lg font-medium">Threshold</CardTitle>
                                 </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="text-3xl font-bold">{singlePool.rebalancingThreshold}%</div>
+                                <CardContent className="pt-6 space-y-3">
+                                    <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
+                                    <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                    </p>
                                 </CardContent>
                             </Card>
 
@@ -354,10 +243,9 @@ export default function SinglePoolPage() {
                                 <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-600 text-white">
                                     <CardTitle className="text-lg font-medium">Created On</CardTitle>
                                 </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="text-2xl font-bold">{formatReadableDateOnly(singlePool.createdAt)}</div>
-                                    <p className="text-sm text-gray-400">
-                                        {formatReadableTimeWithTimeZone(singlePool.createdAt)}
+                                <CardContent className="pt-6 space-y-3">
+                                    <div className="rounded-lg h-8 w-full animate-pulse bg-gray-200 dark:bg-gray-800"></div>
+                                    <p className="rounded-lg h-6 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
                                     </p>
                                 </CardContent>
                             </Card>
@@ -370,40 +258,16 @@ export default function SinglePoolPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-6">
-                                    {singlePool.tokens.map((asset, index) => (
-                                        <div key={asset.symbol} className="space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-medium">{asset.symbol} ({asset.symbol})</span>
-                                                {/* <span className="text-sm text-foreground">${singlePool.currentTokenProportion
-                                                    ? Number(singlePool.currentTokenProportion[index]) / 100
-                                                    : 0}</span> */}
-                                            </div>
-                                            <div className="flex items-center space-x-4">
-                                                <Progress.Root
-                                                    className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
-                                                    value={singlePool.currentTokenProportion
-                                                        ? Number(singlePool.currentTokenProportion[index]) / 100
-                                                        : 0}>
-                                                    <Progress.Indicator
-                                                        className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-400"
-                                                        style={{
-                                                            transform: `translateX(-${100 - (singlePool.currentTokenProportion
-                                                                ? Number(singlePool.currentTokenProportion[index]) / 100
-                                                                : 0)}%)`
-                                                        }}
-                                                    />
-                                                </Progress.Root>
-
-                                                <span className="text-md text-foreground font-medium w-12 text-right">{singlePool.currentTokenProportion
-                                                    ? Number(singlePool.currentTokenProportion[index]) / 100
-                                                    : 0}%</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm text-gray-500">
-                                                <span>Initial Allocation: <span className='text-foreground'>{asset.proportion}%</span></span>
-                                                <span>Initial Price: <span className='text-foreground'>$2</span></span>
-                                            </div>
+                                    <div className="space-y-2">
+                                        <div className="rounded-lg space-x-4 h-12 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
                                         </div>
-                                    ))}
+                                        <div className="rounded-lg space-x-4 h-12 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                        </div>
+                                        <div className="rounded-lg space-x-4 h-12 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                        </div>
+                                        <div className="flex justify-between text-sm text-gray-500">
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -423,85 +287,231 @@ export default function SinglePoolPage() {
                                             <TableHead>Details</TableHead>
                                         </TableRow>
                                     </TableHeader>
-                                    <TableBody>
-                                        {poolData.transactions.map((tx, index) => (
-                                            <React.Fragment key={index}>
-                                                <TableRow key={tx.id} className="cursor-pointer hover:bg-secondary" onClick={() => toggleRowExpansion(tx.id)}>
-                                                    <TableCell>
-                                                        <div className="flex items-center space-x-2">
-                                                            {getStatusIcon(tx.type)}
-                                                            <span>{tx.type}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>25/09/2024</TableCell>
-                                                    <TableCell>{tx.description}</TableCell>
-                                                    <TableCell>
-                                                        <Button variant="ghost" size="sm">
-                                                            {expandedRows.includes(tx.id) ? (
-                                                                <ChevronUp className="h-4 w-4" />
-                                                            ) : (
-                                                                <ChevronDown className="h-4 w-4" />
-                                                            )}
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                                {expandedRows.includes(tx.id) && (
-                                                    <TableRow>
-                                                        <TableCell colSpan={4} className="bg-background border border-border p-4">
-                                                            <div className="grid grid-col-2 gap-4">
-                                                                <div>
-                                                                    <h5 className="font-semibold text-lg text-muted-foreground mb-4">Transaction Details:</h5>
-                                                                    <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Type:</span> {tx.type}</p>
-                                                                    <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Date:</span> {tx.date}</p>
-                                                                    <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Description:</span> {tx.description}</p>
-                                                                    <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Gas Fee:</span> {tx.gasFee} TRX</p>
-                                                                    <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Duration:</span> {tx.duration}</p>
-                                                                    {tx.profitAmount && <p className="text-sm mb-1"><span className="font-medium">Profit Amount:</span> ${tx.profitAmount}</p>}
-                                                                    {tx.lossAmount && <p className="text-sm mb-1"><span className="font-medium">Loss Amount:</span> ${tx.lossAmount}</p>}
-                                                                    {tx.depositAmount && <p className="text-sm mb-1"><span className="font-medium">Deposit Amount:</span> ${tx.depositAmount}</p>}
-                                                                    {tx.oldThreshold && <p className="text-sm mb-1"><span className="font-medium">Old Threshold:</span> {tx.oldThreshold}%</p>}
-                                                                    {tx.newThreshold && <p className="text-sm mb-1"><span className="font-medium">New Threshold:</span> {tx.newThreshold}%</p>}
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="font-semibold text-lg text-muted-foreground mb-4">Pool Status Change</h4>
-                                                                    <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
-                                                                        <div className="flex-1 w-full">
-                                                                            <h5 className="text-sm font-medium mb-3 text-muted-foreground">Before:</h5>
-                                                                            {renderPoolStatus(tx.beforeStatus)}
-                                                                        </div>
-                                                                        <ArrowRight className="h-8 w-8 text-gray-400 transform rotate-90 md:rotate-0" />
-                                                                        <div className="flex-1 w-full">
-                                                                            <h5 className="text-sm font-medium mb-3 text-muted-foreground">After:</h5>
-                                                                            {renderPoolStatus(tx.afterStatus, true)}
+                                </Table>
+                                <div className="space-y-6 mt-4">
+                                    <div className="space-y-2">
+                                        <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                        </div>
+                                        <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                        </div>
+                                        <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                        </div>
+                                        <div className="rounded-lg space-x-4 h-14 w-full animate-pulse bg-gray-200 dark:bg-gray-800">
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div> : singlePool && singlePool.poolAddress ?
+                        <div className=" mx-auto space-y-8">
+                            <div className="flex flex-col md:flex-row justify-between items-center border border-border rounded-lg shadow-lg p-6">
+                                <div>
+                                    <h1 className="text-4xl font-bold text-foreground mb-2">{singlePool.poolName}</h1>
+                                    <p className="text-muted-foreground">Created on {formatReadableDateOnly(singlePool.createdAt)}</p>
+                                </div>
+                                <div className="flex space-x-4 mt-4 md:mt-0">
+                                    <Button onClick={handleDepositFunds} className="bg-green-500 hover:bg-green-600" disabled>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Deposit More Funds
+                                    </Button>
+                                    <Button onClick={handleModifyPool} disabled variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50">
+                                        <Settings className="mr-2 h-4 w-4" /> Modify Pool
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                                        <CardTitle className="text-lg font-medium">Total Balance</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        <div className="text-3xl font-bold">${singlePool.poolBalanceInUSD}</div>
+                                        <p className="text-sm text-gray-400">
+                                            Initial Balance: ${(singlePool.totalValue).toLocaleString()}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-green-500 to-teal-600 text-white">
+                                        <CardTitle className="text-lg font-medium">Performance</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        <div className="text-3xl font-bold">
+                                            {singlePool.performance ? singlePool.performance > 0 ?
+                                                <div className='text-green-500 flex items-center gap-2'><TrendingUp className="h-4 w-4 text-green-500" />{singlePool.performance.toFixed(2)}%</div>
+                                                : singlePool.performance < 0 ?
+                                                    <div className='text-red-500 flex items-center gap-2'><TrendingDown className="h-4 w-4 text-red-500" />{singlePool.performance.toFixed(2)}%</div>
+                                                    : <>{singlePool.performance.toFixed(2)} %</>
+                                                : "~ 0%"}
+                                        </div>
+                                        <p className="text-sm text-gray-400">
+                                            Since creation
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
+                                        <CardTitle className="text-lg font-medium">Threshold</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        <div className="text-3xl font-bold">{singlePool.rebalancingThreshold}%</div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-orange-500 to-pink-600 text-white">
+                                        <CardTitle className="text-lg font-medium">Created On</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        <div className="text-2xl font-bold">{formatReadableDateOnly(singlePool.createdAt)}</div>
+                                        <p className="text-sm text-gray-400">
+                                            {formatReadableTimeWithTimeZone(singlePool.createdAt)}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                <CardHeader>
+                                    <CardTitle className="text-2xl font-bold">Asset Allocation</CardTitle>
+                                    <CardDescription>Compare initial and current allocations</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-6">
+                                        {singlePool.tokens.map((asset, index) => (
+                                            <div key={asset.symbol} className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-medium">{asset.symbol} ({asset.symbol})</span>
+                                                    {/* <span className="text-sm text-foreground">${singlePool.currentTokenProportion
+                                                    ? Number(singlePool.currentTokenProportion[index]) / 100
+                                                    : 0}</span> */}
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <Progress.Root
+                                                        className="flex-grow mx-2 bg-gray-200 dark:bg-gray-800 relative h-4 overflow-hidden rounded-full"
+                                                        value={singlePool.currentTokenProportion
+                                                            ? Number(singlePool.currentTokenProportion[index]) / 100
+                                                            : 0}>
+                                                        <Progress.Indicator
+                                                            className="h-full w-full flex-1 transition-all bg-gray-800 dark:bg-gray-400"
+                                                            style={{
+                                                                transform: `translateX(-${100 - (singlePool.currentTokenProportion
+                                                                    ? Number(singlePool.currentTokenProportion[index]) / 100
+                                                                    : 0)}%)`
+                                                            }}
+                                                        />
+                                                    </Progress.Root>
+
+                                                    <span className="text-md text-foreground font-medium w-12 text-right">{singlePool.currentTokenProportion
+                                                        ? Number(singlePool.currentTokenProportion[index]) / 100
+                                                        : 0}%</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm text-gray-500">
+                                                    <span>Initial Allocation: <span className='text-foreground'>{asset.proportion}%</span></span>
+                                                    <span>Initial Price: <span className='text-foreground'>$2</span></span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                <CardHeader>
+                                    <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
+                                    <CardDescription>Recent activities in your pool</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader className='hover:bg-transparent'>
+                                            <TableRow >
+                                                <TableHead>Action</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead>Details</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {poolData.transactions.map((tx, index) => (
+                                                <React.Fragment key={index}>
+                                                    <TableRow key={tx.id} className="cursor-pointer hover:bg-secondary" onClick={() => toggleRowExpansion(tx.id)}>
+                                                        <TableCell>
+                                                            <div className="flex items-center space-x-2">
+                                                                {getStatusIcon(tx.type)}
+                                                                <span>{tx.type}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>25/09/2024</TableCell>
+                                                        <TableCell>{tx.description}</TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" size="sm">
+                                                                {expandedRows.includes(tx.id) ? (
+                                                                    <ChevronUp className="h-4 w-4" />
+                                                                ) : (
+                                                                    <ChevronDown className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {expandedRows.includes(tx.id) && (
+                                                        <TableRow>
+                                                            <TableCell colSpan={4} className="bg-background border border-border p-4">
+                                                                <div className="grid grid-col-2 gap-4">
+                                                                    <div>
+                                                                        <h5 className="font-semibold text-lg text-muted-foreground mb-4">Transaction Details:</h5>
+                                                                        <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Type:</span> {tx.type}</p>
+                                                                        <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Date:</span> {tx.date}</p>
+                                                                        <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Description:</span> {tx.description}</p>
+                                                                        <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Gas Fee:</span> {tx.gasFee} TRX</p>
+                                                                        <p className="text-sm mb-1"><span className="font-medium text-muted-foreground">Duration:</span> {tx.duration}</p>
+                                                                        {tx.profitAmount && <p className="text-sm mb-1"><span className="font-medium">Profit Amount:</span> ${tx.profitAmount}</p>}
+                                                                        {tx.lossAmount && <p className="text-sm mb-1"><span className="font-medium">Loss Amount:</span> ${tx.lossAmount}</p>}
+                                                                        {tx.depositAmount && <p className="text-sm mb-1"><span className="font-medium">Deposit Amount:</span> ${tx.depositAmount}</p>}
+                                                                        {tx.oldThreshold && <p className="text-sm mb-1"><span className="font-medium">Old Threshold:</span> {tx.oldThreshold}%</p>}
+                                                                        {tx.newThreshold && <p className="text-sm mb-1"><span className="font-medium">New Threshold:</span> {tx.newThreshold}%</p>}
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-lg text-muted-foreground mb-4">Pool Status Change</h4>
+                                                                        <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
+                                                                            <div className="flex-1 w-full">
+                                                                                <h5 className="text-sm font-medium mb-3 text-muted-foreground">Before:</h5>
+                                                                                {renderPoolStatus(tx.beforeStatus)}
+                                                                            </div>
+                                                                            <ArrowRight className="h-8 w-8 text-gray-400 transform rotate-90 md:rotate-0" />
+                                                                            <div className="flex-1 w-full">
+                                                                                <h5 className="text-sm font-medium mb-3 text-muted-foreground">After:</h5>
+                                                                                {renderPoolStatus(tx.afterStatus, true)}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            <a
-                                                                href={`https://tronscan.org/#/transaction/${tx.txHash}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="mt-6 text-sm text-white max-w-max px-4 py-3 rounded-lg bg-accent hover:text-blue-600 transition-colors duration-200 flex items-center"
-                                                            >
-                                                                View Transaction <ExternalLink className="h-4 w-4 ml-1" />
-                                                            </a>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )}
-                                            </React.Fragment>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    :
-                    <div className=" mx-auto space-y-8">
-                        <div className="text-center mt-12">
-                            <p className="text-xl text-gray-600">Unable to fetch the details of this pool. Please try again after some time.</p>
+                                                                <a
+                                                                    href={`https://tronscan.org/#/transaction/${tx.txHash}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="mt-6 text-sm text-white max-w-max px-4 py-3 rounded-lg bg-accent hover:text-blue-600 transition-colors duration-200 flex items-center"
+                                                                >
+                                                                    View Transaction <ExternalLink className="h-4 w-4 ml-1" />
+                                                                </a>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </div>
-            }
-        </div>
+                        :
+                        <div className=" mx-auto space-y-8">
+                            <div className="text-center mt-12">
+                                <p className="text-xl text-gray-600">Unable to fetch the details of this pool. Please try again after some time.</p>
+                            </div>
+                        </div>
+                }
+            </div></>
     )
 }
