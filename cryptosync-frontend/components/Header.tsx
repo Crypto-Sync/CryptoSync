@@ -8,7 +8,6 @@ import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './ui/drawer';
-import { Button } from './ui/button';
 
 const ConnectWallet = dynamic(() => import("@/components/ConnectWallet"), { ssr: false })
 
