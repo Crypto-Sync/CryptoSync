@@ -4,6 +4,7 @@ import { IPool } from "./Pool";
 
 export interface ITransaction extends Document {
   type:
+  | "no-action"
   | "rebalance"
   | "take-profit"
   | "stop-loss"
@@ -24,6 +25,7 @@ const transactionSchema: Schema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
+      "no-action",
       "rebalance",
       "take-profit",
       "stop-loss",
