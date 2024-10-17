@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowRight, Search, BarChart2, RefreshCcw } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -202,7 +202,7 @@ const UserPoolsList: React.FC = () => {
                                                     </div>
                                                     <div className="space-y-4">
                                                         {pool.tokens.map((asset, index) => (
-                                                            <>
+                                                            <React.Fragment key={index}>
                                                                 <div key={asset.symbol} className="flex items-center">
                                                                     <span className=" text-sm font-medium text-foreground">{asset.symbol}</span>
                                                                     <Progress.Root
@@ -229,7 +229,7 @@ const UserPoolsList: React.FC = () => {
                                                                         ? Number(pool.currentTokenProportion[index]) / 100
                                                                         : 0)}%</span>
                                                                 </div>
-                                                            </>
+                                                            </React.Fragment>
                                                         ))}
                                                         <div className="flex justify-between text-sm font-medium text-muted-foreground mt-2">
                                                             <div className="flex items-center">
