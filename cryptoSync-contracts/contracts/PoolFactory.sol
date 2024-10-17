@@ -108,8 +108,8 @@ contract PoolFactory {
             "Invalid threshold"
         );
         require(
-            params.takeProfit[0] > params.threshold &&
-                params.takeProfit[1] > params.threshold,
+            (params.takeProfit[0] == 0 || params.takeProfit[0] > params.threshold ) &&
+                (params.takeProfit[1] == 0 || params.takeProfit[1] > params.threshold),
             "Invalid takeProfit"
         );
     }

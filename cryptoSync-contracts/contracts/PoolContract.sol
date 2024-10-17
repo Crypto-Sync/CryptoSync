@@ -323,24 +323,26 @@ contract PoolContract {
 
     /**
      * @dev Allows the pool owner to deposit specified amounts of tokens in the pool.
-     * @param _tokens Array of token addresses to deposit.
      * @param _amounts Array of amounts of tokens to deposit.
      */
     function depositTokens(
-        address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyOwner {
         require(tokens.length == _amounts.length, "Arrays length mismatch.");
+        
+        uint256[2] memory prices = fetchPrices();
 
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             if (_amounts[i] > 0) {
                 IERC20(tokens[i]).transferFrom(
                     msg.sender,
                     address(this),
                     _amounts[i]
                 );
+                initialTokenValues[i] = prices[i] * balanceOf(tokens[i]);
                 emit TokensDeposited(tokens[i], _amounts[i]);
             }
+
         }
     }
 
@@ -353,18 +355,18 @@ contract PoolContract {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyOwner {
-        require(tokens.length == _amounts.length, "Arrays length mismatch.");
+        require(_tokens.length == _amounts.length, "Arrays length mismatch.");
 
         for (uint256 i = 0; i < _tokens.length; i++) {
             if (_amounts[i] > 0) {
-                uint256 contractBalance = balanceOf(tokens[i]);
+                uint256 contractBalance = balanceOf(_tokens[i]);
                 require(
                     contractBalance >= _amounts[i],
                     "Insufficient balance to withdraw."
                 );
 
-                IERC20(tokens[i]).transfer(owner, _amounts[i]);
-                emit TokensWithdrawn(tokens[i], _amounts[i]);
+                IERC20(_tokens[i]).transfer(owner, _amounts[i]);
+                emit TokensWithdrawn(_tokens[i], _amounts[i]);
             }
         }
     }
