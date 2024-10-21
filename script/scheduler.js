@@ -86,19 +86,22 @@ async function checkAndRebalance(pool) {
 
       // Call rebalance function
       const tx = await poolContract.rebalance().send({
-        feeLimit: 100000000,
+        feeLimit: 1000000000,
         callValue: 0,
-        shouldPollResponse: true
       });
 
+      
+
       console.log(`Rebalanced pool ${pool.poolAddress}: ${tx}`);
+
+      console.log("Tx Id :", tx);
       
       // Fetch after status
       const afterStatus = await getPoolStatus(poolContract);
       console.log("afterStatus : ", afterStatus);
 
       // POST API for after status
-      await postTransactionStatus(action, pool.poolAddress, pool.userWalletAddress, beforeStatus, afterStatus, "0x1232432432");
+      await postTransactionStatus(action, pool.poolAddress, pool.userWalletAddress, beforeStatus, afterStatus, tx);
     }
   } catch (error) {
     console.error(`Error processing pool ${pool.poolAddress}:`, error);
