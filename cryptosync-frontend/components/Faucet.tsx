@@ -120,7 +120,7 @@ const Faucet: React.FC = () => {
         const token = tokens[tokenKey];
 
         try {
-            const contract = await tronWeb.contract(abi, token.address);
+            const contract = await tronWeb.contract(abi.abi, token.address);
             const mintAmount = parseEther("100");
 
             await contract.methods.mintMore(address, mintAmount).send({
