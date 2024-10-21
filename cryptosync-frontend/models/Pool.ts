@@ -6,6 +6,7 @@ interface IToken {
   proportion: number;
   takeProfitPercentage: number;
   stopLossAtTokenPrice: number;
+  initialTokenPriceInUSD: number;
 }
 
 export interface IPool extends Document {
@@ -26,6 +27,7 @@ const TokenSchema = new mongoose.Schema<IToken>({
   proportion: Number,
   takeProfitPercentage: Number,
   stopLossAtTokenPrice: Number,
+  initialTokenPriceInUSD: Number,
 });
 
 const PoolSchema = new mongoose.Schema<IPool>({

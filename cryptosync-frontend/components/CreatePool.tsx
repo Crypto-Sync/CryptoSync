@@ -110,8 +110,8 @@ function TokenSlider({ token, tokenPrice, tokenBalance, onPercentageChange, onTa
         <div className="bg-zinc-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg w-full mb-4">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <div className={`border border-gray-500 dark:border-gray-200 p-1 rounded-full mr-3`}>
-                        <Image src={token?.icon} alt="token icon" className="w-8 h-8 text-foreground" width={100} height={100} />
+                    <div className={`border border-gray-500 dark:border-gray-200 p-0 rounded-full mr-3`}>
+                        <Image src={token?.icon} alt="token icon" className="w-10 h-10 text-foreground" width={100} height={100} />
                     </div>
                     <div>
                         <h3 className="text-forground font-semibold">{token?.name}</h3>
@@ -148,7 +148,7 @@ function TokenSlider({ token, tokenPrice, tokenBalance, onPercentageChange, onTa
                     <span className='text-muted-foreground mr-1 text-sm'>$</span>{tokenPrice ? (tokenPrice * selectedAmount).toFixed(4) : 0}
                 </span>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-6 grid grid-cols-1 gap-4">
                 <div>
                     <label htmlFor={`takeProfit-${token.id}`} className="flex items-center text-sm font-medium text-secondary-foreground mb-1">
                         Take Profit (%)
@@ -159,28 +159,27 @@ function TokenSlider({ token, tokenPrice, tokenBalance, onPercentageChange, onTa
                         id={`takeProfit-${token.id}`}
                         defaultValue={takeProfit}
                         onChange={handleTakeProfitChange}
-                        placeholder='Profit'
+                        placeholder='Profit Percentage'
                         min="0"
                         max="100"
-                        step="0.1"
                         className="w-full px-3 py-2 bg-gray-300 dark:bg-gray-700 text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                     />
                 </div>
                 <div>
                     <label htmlFor={`stopLoss-${token.id}`} className="flex items-center text-sm font-medium text-secondary-foreground mb-1">
-                        Stop Loss (in USD)
-                        <InfoTooltip content="At this price all your tokens will be sold out for handle loss" />
+                        Stop Loss (at Token Price)
+                        <InfoTooltip content="At this token price all your tokens will be sold out for handle loss" />
                     </label>
                     <input
                         type="number"
                         id={`stopLoss-${token.id}`}
                         defaultValue={stopLoss}
                         onChange={handleStopLossChange}
-                        placeholder='Stoploss'
+                        placeholder='Enter Token Price'
                         min="0"
-                        step="0.1"
                         className="w-full px-3 py-2 bg-gray-300 dark:bg-gray-700 text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                     />
+                    <span className="flex items-center text-sm font-medium text-muted-foreground my-1">Token Price: <span className='text-primary ml-1'>${tokenPrice ? tokenPrice.toFixed(3) : 0}</span>/{token.name}</span>
                 </div>
             </div>
         </div>
@@ -208,10 +207,10 @@ function TokenSelector({ currentTokens, onTokenChange }: TokenSelectorProps) {
                     {tokens.filter(token => !currentTokens.includes(token.id)).map((token) => (
                         <DropdownMenuItem
                             key={token.id}
-                            className="text-foreground bg-gray-700 hover:bg-gray-700 group flex items-center px-4 py-2 text-sm cursor-pointer"
+                            className="text-foreground bg-gray-700 hover:bg-gray-700 group flex items-center px-1 py-2 text-sm cursor-pointer"
                             onSelect={() => onTokenChange(token.id)}
                         >
-                            <Image src={token.icon} alt="token icon" className="mr-3 h-5 w-5" aria-hidden="true" width={100} height={100} />
+                            <Image src={token.icon} alt="token icon" className="mr-3 h-6 w-6" aria-hidden="true" width={100} height={100} />
                             {token.name}
                         </DropdownMenuItem>
                     ))}
@@ -304,7 +303,7 @@ export default function CreatePool() {
     const [tokenPrices, setTokenPrices] = useState<{ [key: string]: number }>({});
     const [tokenBalances, setTokenBalances] = useState<{ [key: string]: number }>({});
 
-
+    const maxUint256Value = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tronWeb, setTronWeb] = useState<any>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -519,7 +518,7 @@ export default function CreatePool() {
         userWalletAddress: string;
         poolName: string;
         totalValue: number | null;
-        tokens: Array<{ symbol: string | undefined; amount: number | string; proportion: number, takeProfitPercentage: number | string, stopLossAtTokenPrice: number | string }>;
+        tokens: Array<{ symbol: string | undefined; amount: number | string; proportion: number, takeProfitPercentage: number | string, stopLossAtTokenPrice: number | string, initialTokenPriceInUSD: number | null }>;
         rebalancingThreshold: number;
         rebalancingFrequency: string;
         takeProfitPercentage?: number;
@@ -527,7 +526,7 @@ export default function CreatePool() {
     }
 
 
-    async function createPool(data: CreatePoolData) {
+    async function storePoolInDB(data: CreatePoolData) {
 
         console.log("data", data);
         // 2.476285 =>total value
@@ -548,7 +547,7 @@ export default function CreatePool() {
             const value = tokenValues[tokenId] || 0;
             const percentage = totalValue > 0 ? (value / totalValue) * 100 : 0;
             return {
-                tokenId,
+                tokenId: tokenId,
                 name: tokens.find(t => t.id === tokenId)?.name,
                 value: value,
                 tokenAddress: tokens.find(t => t.id === tokenId)?.tokenAddress,
@@ -589,14 +588,27 @@ export default function CreatePool() {
 
         const params = [
             [tokenProportions[0].tokenAddress, tokenProportions[1].tokenAddress],
-            [parseEther(tokenProportions[0].amount.toString()).toString(), parseEther(tokenProportions[1].amount.toString()).toString()],
-            [(parseFloat(tokenProportions[0].percentage) * 100).toFixed(0), (parseFloat(tokenProportions[1].percentage) * 100).toFixed(0)],
+            [
+                parseEther(tokenProportions[0].amount.toString()).toString(),
+                parseEther(tokenProportions[1].amount.toString()).toString()
+            ],
+            [
+                (parseFloat(tokenProportions[0].percentage) * 100).toFixed(0),
+                (parseFloat(tokenProportions[1].percentage) * 100).toFixed(0)
+            ],
             (rebalancingThreshold * 100).toString(),
-            [tokenProportions[0].takeProfit * 100, tokenProportions[1].takeProfit * 100],
-            [(tokenProportions[0].stopLoss / tokenProportions[0].amount) * 10 ** 6, (tokenProportions[1].stopLoss / tokenProportions[1].amount) * 10 ** 6],
+            [
+                tokenProportions[0].takeProfit ? (tokenProportions[0].takeProfit * 100) : maxUint256Value,
+                tokenProportions[1].takeProfit ? (tokenProportions[1].takeProfit * 100) : maxUint256Value
+            ],
+            [
+                tokenProportions[0].stopLoss * 10 ** 6,
+                tokenProportions[1].stopLoss * 10 ** 6
+            ],
             rebalancingInterval
         ];
 
+        console.log("params for creating pool : ", params);
 
         try {
 
@@ -638,12 +650,21 @@ export default function CreatePool() {
             console.log('userAddress', userAddress);
             console.log('params in contract', params);
             // Now create the pool
-            const tx = await factoryContract.createPool(params).send({
-                feeLimit: 1000 * 1e6, // Transaction fee limit
-                callValue: 0, // No TRX to send with this call
-                from: userAddress // User pays gas
-            });
-            console.log(tx)
+
+            try {
+                const tx = await factoryContract.createPool(params).send({
+                    feeLimit: 1000 * 1e6, // Transaction fee limit
+                    callValue: 0, // No TRX to send with this call
+                    from: userAddress // User pays gas
+                });
+                console.log(tx)
+            }
+            catch (error) {
+                console.log("error in creating pool :", error)
+                if (error) {
+                    return;
+                }
+            }
 
 
             const getPoolAddress = async () => {
@@ -667,14 +688,28 @@ export default function CreatePool() {
             const poolAddress = await getPoolAddress();
             console.log(poolAddress);
 
-            createPool({
+            storePoolInDB({
                 poolAddress,//need to change this becasue it is stroing hash of address
                 userWalletAddress: userAddress,
                 poolName: poolName,
                 totalValue: totalValue,
                 tokens: [
-                    { symbol: tokenProportions[0].name, amount: tokenProportions[0].amount, proportion: parseFloat(tokenProportions[0].percentage), takeProfitPercentage: tokenProportions[0].takeProfit * 100, stopLossAtTokenPrice: (tokenProportions[0].stopLoss / tokenProportions[0].amount) * 10 ** 6 },
-                    { symbol: tokenProportions[1].name, amount: tokenProportions[1].amount, proportion: parseFloat(tokenProportions[1].percentage), takeProfitPercentage: tokenProportions[1].takeProfit * 100, stopLossAtTokenPrice: (tokenProportions[1].stopLoss / tokenProportions[1].amount) * 10 ** 6 }
+                    {
+                        symbol: tokenProportions[0].name,
+                        amount: tokenProportions[0].amount,
+                        proportion: parseFloat(tokenProportions[0].percentage),
+                        takeProfitPercentage: tokenProportions[0].takeProfit * 100,
+                        stopLossAtTokenPrice: tokenProportions[0].stopLoss * 10 ** 6,
+                        initialTokenPriceInUSD: tokenPrices[tokenProportions[0].tokenId],
+                    },
+                    {
+                        symbol: tokenProportions[1].name,
+                        amount: tokenProportions[1].amount,
+                        proportion: parseFloat(tokenProportions[1].percentage),
+                        takeProfitPercentage: tokenProportions[1].takeProfit * 100,
+                        stopLossAtTokenPrice: tokenProportions[1].stopLoss * 10 ** 6,
+                        initialTokenPriceInUSD: tokenPrices[tokenProportions[1].tokenId],
+                    }
                 ],
                 rebalancingThreshold,
                 rebalancingFrequency: rebalancingInterval,
@@ -691,6 +726,7 @@ export default function CreatePool() {
     useEffect(() => {
         console.log("tokenPrices :", tokenPrices)
     }, [tokenPrices])
+
     return (
         <div className="bg-background p-6 rounded-xl shadow-custom-strong max-w-3xl w-full">
             <h1 className="text-3xl font-bold text-foreground mb-8 mt-4 text-center">Create Pool</h1>
@@ -721,8 +757,8 @@ export default function CreatePool() {
                             onPercentageChange={handlePercentageChange}
                             onTakeProfitChange={handleTakeProfitChange}
                             onStopLossChange={handleStopLossChange}
-                            takeProfit={takeProfitPercentages[tokenId] || 0}
-                            stopLoss={stopLossPercentages[tokenId] || 0}
+                            takeProfit={takeProfitPercentages[tokenId]}
+                            stopLoss={stopLossPercentages[tokenId]}
                             tokenPrice={tokenPrices[tokenId]}
                             tokenBalance={tokenBalances[tokenId] || 0} // Pass the real token balance
                         />
