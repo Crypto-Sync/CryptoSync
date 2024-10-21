@@ -17,7 +17,7 @@ const poolABI = poolContractABI.abi;
 // Function to fetch all pools from the MongoDB API
 async function getAllPools() {
   try {
-    const response = await fetch('http://localhost:3000/api/pools/get-all-pools');
+    const response = await fetch(`${process.env.APP_URL}/api/pools/get-all-pools`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -170,7 +170,7 @@ async function determineAction(pool, poolContract, beforeStatus) {
     const token1Profit = (token1Value - token1InitialValue) * 100 / token1InitialValue;
     console.log("Calculated profits:", { token0Profit, token1Profit });
     
-    if ((token0Profit >= takeProfit0 && currentProportion0 != 0) || (token1Profit >= takeProfit1 && currentProportion0 != 0)) {
+    if ((token0Profit >= takeProfit0 && currentProportion0 != 0 && takeProfit0 != 0) || (token1Profit >= takeProfit1 && currentProportion0 != 0 && takeProfit0 != 0)) {
       console.log("Take profit triggered");
       return "take-profit";
     }
@@ -236,7 +236,7 @@ async function postTransactionStatus(action, poolAddress, userWalletAddress, bef
       poolId: poolAddress
     });
 
-    const response = await axios.post('http://localhost:3000/api/pools/transactions/create', {
+    const response = await axios.post(`${process.env.APP_URL}/api/pools/transactions/create`, {
       type: action,
       txHash: tx,
       description: 'Automatic rebalancing completed',
