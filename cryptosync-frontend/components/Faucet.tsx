@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react';
-// import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
 import { parseEther, formatEther } from 'viem';
 import abi from "../abis/Token.json";
-import { TronLinkAdapter } from '@tronweb3/tronwallet-adapters';
+// import { TronLinkAdapter } from '@tronweb3/tronwallet-adapters';
+import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
 
 const tokens: { [key: string]: { address: string; name: string } } = {
     SyncX: {
@@ -24,10 +24,10 @@ const tokens: { [key: string]: { address: string; name: string } } = {
 const Faucet: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tronWeb, setTronWeb] = useState<any>(null);
-    const adapter = new TronLinkAdapter();
+    // const adapter = new TronLinkAdapter();
 
-    // const { address } = useWallet();
-    const [address, setAddress] = useState<string | null>()
+    const { address } = useWallet();
+    // const [address, setAddress] = useState<string | null>()
     const [status, setStatus] = useState<string | null>(null);
     const [balances, setBalances] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
@@ -37,7 +37,7 @@ const Faucet: React.FC = () => {
     useEffect(() => {
         const initTronWeb = async () => {
             console.log("tronweb instance creation function called")
-            if (typeof window !== 'undefined' && window.tronWeb && window.tronWeb.ready) {
+            if (typeof window !== 'undefined' && window.tronWeb) {
                 const tronInstance = window.tronWeb;
                 if (tronInstance?.defaultAddress?.base58) {
                     setTronWeb(tronInstance);
@@ -68,17 +68,17 @@ const Faucet: React.FC = () => {
         };
     }, [status]);
 
-    const connectWallet = useCallback(async () => {
-        await adapter.connect();
-        console.log("addressss")
-        console.log(adapter.address);
-        setAddress(adapter.address)
-    }, [adapter])
+    // const connectWallet = useCallback(async () => {
+    //     await adapter.connect();
+    //     console.log("addressss")
+    //     console.log(adapter.address);
+    //     setAddress(adapter.address)
+    // }, [adapter])
 
-    useEffect(() => {
-        if (adapter)
-            connectWallet()
-    }, [adapter, connectWallet])
+    // useEffect(() => {
+    //     if (adapter)
+    //         connectWallet()
+    // }, [adapter, connectWallet])
 
 
     const fetchBalance = useCallback(async (tokenKey: string) => {
