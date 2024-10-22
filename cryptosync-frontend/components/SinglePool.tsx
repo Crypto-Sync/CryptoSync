@@ -10,30 +10,7 @@ import { TronWeb } from "tronweb"
 import { abi } from '@/abis/PoolContract.json'
 import { formatReadableDateOnly, formatReadableTimeWithTimeZone } from '@/lib/dateFormatter'
 import Link from 'next/link'
-// Mock data - replace with actual data fetching in a real application
-const poolData = {
-    name: "Balanced Growth Pool",
-    createdAt: "2023-09-15",
-    initialBalance: 10000,
-    currentBalance: 10500,
-    assets: [
-        { name: "Bitcoin", symbol: "BTC", initialAllocation: 40, currentAllocation: 42, initialPrice: 26000, currentPrice: 27000 },
-        { name: "Ethereum", symbol: "ETH", initialAllocation: 30, currentAllocation: 28, initialPrice: 1600, currentPrice: 1550 },
-        { name: "Tron", symbol: "TRX", initialAllocation: 20, currentAllocation: 21, initialPrice: 0.08, currentPrice: 0.085 },
-        { name: "USD Coin", symbol: "USDC", initialAllocation: 10, currentAllocation: 9, initialPrice: 1, currentPrice: 1 },
-    ],
-    transactions: [
-        { id: 1, type: "Rebalance", date: "2023-09-20", description: "Automatic rebalancing triggered due to 5% threshold breach", txHash: "0x123...abc", beforeStatus: { BTC: 43, ETH: 28, TRX: 19, USDC: 10 }, afterStatus: { BTC: 40, ETH: 30, TRX: 20, USDC: 10 }, gasFee: 0.1, duration: "2 minutes" },
-        { id: 2, type: "Take Profit", date: "2023-09-22", description: "Take profit executed for BTC at 10% gain", txHash: "0x456...def", beforeStatus: { BTC: 45, ETH: 28, TRX: 18, USDC: 9 }, afterStatus: { BTC: 40, ETH: 30, TRX: 20, USDC: 10 }, gasFee: 0.15, duration: "1 minute", profitAmount: 500 },
-        { id: 3, type: "Rebalance", date: "2023-09-25", description: "Automatic rebalancing triggered due to 5% threshold breach", txHash: "0x789...ghi", beforeStatus: { BTC: 42, ETH: 29, TRX: 21, USDC: 8 }, afterStatus: { BTC: 40, ETH: 30, TRX: 20, USDC: 10 }, gasFee: 0.12, duration: "3 minutes" },
-        { id: 4, type: "Stop Loss", date: "2023-09-28", description: "Stop loss executed for ETH at 5% loss", txHash: "0xabc...123", beforeStatus: { BTC: 41, ETH: 31, TRX: 19, USDC: 9 }, afterStatus: { BTC: 42, ETH: 28, TRX: 20, USDC: 10 }, gasFee: 0.18, duration: "1 minute", lossAmount: 300 },
-        { id: 5, type: "Deposit", date: "2023-09-30", description: "User deposited 1000 USDC", txHash: "0xdef...456", beforeStatus: { BTC: 42, ETH: 28, TRX: 20, USDC: 10 }, afterStatus: { BTC: 39, ETH: 26, TRX: 18, USDC: 17 }, gasFee: 0.05, duration: "30 seconds", depositAmount: 1000 },
-        { id: 6, type: "Modify Pool", date: "2023-10-01", description: "Updated rebalancing threshold to 5%", txHash: "0xghi...789", beforeStatus: { BTC: 39, ETH: 26, TRX: 18, USDC: 17 }, afterStatus: { BTC: 39, ETH: 26, TRX: 18, USDC: 17 }, gasFee: 0.08, duration: "45 seconds", oldThreshold: 3, newThreshold: 5 },
-    ],
-    rebalancingThreshold: 5,
-    lastRebalance: "2023-09-25",
-    status: "Active"
-}
+
 interface Token {
     _id: string;
     symbol: string;
@@ -60,12 +37,33 @@ interface Pool {
     performance?: number
 }
 
+interface TokenAllocation {
+    tokenName: string;
+    tokenPercentage: number;
+    _id: string;
+}
+
+interface  Transaction {
+    _id: string;
+    type: string;
+    txHash: string;
+    description: string;
+    tokenBefore: TokenAllocation[];
+    tokenAfter: TokenAllocation[];
+    amount: number;
+    user: string;
+    pool: string;
+    txDate: string;
+    __v: number;
+}
+
 export default function SinglePoolPage() {
 
     const router = useRouter()
     const params = useParams()
     // console.log(params.id)
-    const [expandedRows, setExpandedRows] = useState<number[]>([])
+    const [expandedRows, setExpandedRows] = useState<string[]>([])
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [singlePool, setSinglePool] = useState<Pool>()
     const [loading, setLoading] = useState<boolean>(false)
     const calculatePerformance = async (currentBalance: number, initialBalance: number) => {
@@ -76,28 +74,28 @@ export default function SinglePoolPage() {
     }
 
     const getStatusIcon = (type: string) => {
-        switch (type) {
-        case 'Rebalance':
-            return <RefreshCcw className="h-4 w-4 text-blue-500" />
-        case 'Take Profit':
-            return <TrendingUp className="h-4 w-4 text-green-500" />
-        case 'Stop Loss':
-            return <TrendingDown className="h-4 w-4 text-red-500" />
-        case 'Deposit':
-            return <ArrowUpRight className="h-4 w-4 text-purple-500" />
-        case 'Modify Pool':
-            return <BarChart2 className="h-4 w-4 text-orange-500" />
-        default:
-            return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+        switch (type.toLowerCase()) {
+            case 'rebalance':
+                return <RefreshCcw className="h-4 w-4 text-blue-500" />
+            case 'take-profit':
+                return <TrendingUp className="h-4 w-4 text-green-500" />
+            case 'stop-loss':
+                return <TrendingDown className="h-4 w-4 text-red-500" />
+            case 'deposit':
+                return <ArrowUpRight className="h-4 w-4 text-purple-500" />
+            case 'modify':
+                return <BarChart2 className="h-4 w-4 text-orange-500" />
+            default:
+                return <AlertTriangle className="h-4 w-4 text-yellow-500" />
         }
     }
 
-    const toggleRowExpansion = (id: number) => {
+    const toggleRowExpansion = (id: string) => {
         setExpandedRows(prev =>
             prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
         )
     }
-    const handleDepositFunds = () => {
+    const handleDepositFunds = () =>  {
         router.push("/pool/deposit-token/1")
         // console.log("Deposit more funds")
         // Implement deposit logic here
@@ -166,22 +164,53 @@ export default function SinglePoolPage() {
         }
     }
 
+    
+    
+    async function fetchTxHistory(poolAddress: string){
+        setLoading(true)
+        try {
+            const response = await fetch(`/api/pools/transactions/get-pool-txs?poolId=${poolAddress}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch pools');
+            }
+            setTransactions(data.transactions || []);
+            console.log("Tx History: ", data.transactions);
+            
+        } catch (error) {
+            console.error('Error fetching transactions:', error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    
     useEffect(() => {
         if (params.id) {
             fetchUserPool(params.id as string)
+            fetchTxHistory(params.id as string)
         }
     }, [params.id])
 
-    const renderPoolStatus = (status: { [key: string]: number }, isAfter: boolean = false) => (
+    const renderPoolStatus = (tokens: TokenAllocation[], isAfter: boolean = false) => (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {Object.entries(status).map(([symbol, allocation]) => (
-                <div key={symbol} className={`flex flex-col items-center justify-center rounded-lg p-3 transition-all duration-300 border border-border ${isAfter ? 'bg-green-100 shadow-md' : 'bg-background'}`}>
-                    <span className="text-sm font-medium text-muted-foreground">{symbol}</span>
-                    <span className={`text-2xl font-bold ${isAfter ? 'text-green-600' : 'text-foreground'}`}>{allocation}%</span>
+            {tokens.map((token) => (
+                <div 
+                    key={token._id} 
+                    className={`flex flex-col items-center justify-center rounded-lg p-3 transition-all duration-300 border border-border ${
+                        isAfter ? 'bg-green-100 shadow-md' : 'bg-background'
+                    }`}
+                >
+                    <span className="text-sm font-medium text-muted-foreground">
+                        {token.tokenName}
+                    </span>
+                    <span className={`text-2xl font-bold ${isAfter ? 'text-green-600' : 'text-foreground'}`}>
+                        {token.tokenPercentage.toFixed(2)}%
+                    </span>
                 </div>
             ))}
         </div>
-    )
+    );
 
     return (
         <>
@@ -425,6 +454,98 @@ export default function SinglePoolPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <Table>
+                                    <TableHeader className="hover:bg-transparent">
+                                        <TableRow>
+                                        <TableHead>Action</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead>Details</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {transactions.map((tx, index) => (
+                                        <React.Fragment key={index}>
+                                            <TableRow 
+                                            className="cursor-pointer hover:bg-secondary"
+                                            onClick={() => toggleRowExpansion(tx._id)}
+                                            >
+                                            <TableCell>
+                                                <div className="flex items-center space-x-2">
+                                                {getStatusIcon(tx.type)}
+                                                <span>{tx.type}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>25/09/2024</TableCell>
+                                            <TableCell>{tx.description}</TableCell>
+                                            <TableCell>
+                                                <Button variant="ghost" size="sm">
+                                                {expandedRows.includes(tx._id) ? (
+                                                    <ChevronUp className="h-4 w-4" />
+                                                ) : (
+                                                    <ChevronDown className="h-4 w-4" />
+                                                )}
+                                                </Button>
+                                            </TableCell>
+                                            </TableRow>
+                                            {expandedRows.includes(tx._id) && (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="bg-background border border-border p-4">
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                    <h5 className="font-semibold text-lg text-muted-foreground mb-4">
+                                                        Transaction Details:
+                                                    </h5>
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm mb-1">
+                                                        <span className="font-medium text-muted-foreground">Type:</span> {tx.type}
+                                                        </p>
+                                                        <p className="text-sm mb-1">
+                                                        <span className="font-medium text-muted-foreground">Date:</span> {tx.txDate}
+                                                        </p>
+                                                        <p className="text-sm mb-1">
+                                                        <span className="font-medium text-muted-foreground">Description:</span> {tx.description}
+                                                        </p>
+                                                    </div>
+                                                    </div>
+                                                    <div>
+                                                    <h4 className="font-semibold text-lg text-muted-foreground mb-4">Pool Status Change</h4>
+                                                    <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
+                                                        <div className="flex-1 w-full">
+                                                        <h5 className="text-sm font-medium mb-3 text-muted-foreground">Before:</h5>
+                                                        {renderPoolStatus(tx.tokenBefore)}
+                                                        </div>
+                                                        <ArrowRight className="h-8 w-8 text-gray-400 transform rotate-90 md:rotate-0" />
+                                                        <div className="flex-1 w-full">
+                                                        <h5 className="text-sm font-medium mb-3 text-muted-foreground">After:</h5>
+                                                        {renderPoolStatus(tx.tokenAfter, true)}
+                                                        </div>
+                                                    </div>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={`https://tronscan.org/#/transaction/${tx.txHash}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-6 text-sm text-white max-w-max px-4 py-3 rounded-lg bg-accent hover:text-blue-600 transition-colors duration-200 flex items-center"
+                                                >
+                                                    View Transaction <ExternalLink className="h-4 w-4 ml-1" />
+                                                </a>
+                                                </TableCell>
+                                            </TableRow>
+                                            )}
+                                        </React.Fragment>
+                                        ))}
+                                    </TableBody>
+                                    </Table>
+                                </CardContent>
+                                </Card>
+                            {/* <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
+                                <CardHeader>
+                                    <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
+                                    <CardDescription>Recent activities in your pool</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
                                         <TableHeader className='hover:bg-transparent'>
                                             <TableRow >
                                                 <TableHead>Action</TableHead>
@@ -503,7 +624,7 @@ export default function SinglePoolPage() {
                                         </TableBody>
                                     </Table>
                                 </CardContent>
-                            </Card>
+                            </Card> */}
                         </div>
                         :
                         <div className=" mx-auto space-y-8">

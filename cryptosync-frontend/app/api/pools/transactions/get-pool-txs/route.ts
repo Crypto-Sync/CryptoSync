@@ -18,8 +18,8 @@ export async function GET(req: Request) {
     const transactions: ITransaction[] = await Transaction.find({
       pool: poolId,
     })
-      .populate("user", "userWalletAddress")
-      .exec();
+      // .populate("user", "userWalletAddress")
+      // .exec();
 
     if (!transactions || transactions.length === 0) {
       return NextResponse.json(
