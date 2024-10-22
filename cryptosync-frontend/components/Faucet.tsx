@@ -33,15 +33,7 @@ const Faucet: React.FC = () => {
     const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
     const [statusVisible, setStatusVisible] = useState(false);
 
-    const connectWallet = async () => {
-        await adapter.connect();
-        console.log("addressss")
-        console.log(adapter.address);
-        setAddress(adapter.address)
-    }
-    useEffect(() => {
-        connectWallet()
-    }, [])
+
     useEffect(() => {
         const initTronWeb = async () => {
             if (typeof window !== 'undefined' && window.tronWeb && window.tronWeb.ready) {
@@ -75,6 +67,17 @@ const Faucet: React.FC = () => {
         };
     }, [status]);
 
+    const connectWallet = useCallback(async () => {
+        await adapter.connect();
+        console.log("addressss")
+        console.log(adapter.address);
+        setAddress(adapter.address)
+    }, [adapter])
+
+    useEffect(() => {
+        if (adapter)
+            connectWallet()
+    }, [adapter, connectWallet])
 
 
     const fetchBalance = useCallback(async (tokenKey: string) => {
@@ -104,8 +107,7 @@ const Faucet: React.FC = () => {
 
     useEffect(() => {
         if (address) { console.log(address) }
-        if (address && tronWeb) {
-
+        if (address && tronWeb && tronWeb.ready) {
             fetchAllBalances();
         }
     }, [address, fetchAllBalances, fetchBalance, tronWeb]);
