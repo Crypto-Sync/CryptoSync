@@ -10,12 +10,16 @@ import { TronWeb } from "tronweb"
 import { abi } from '@/abis/PoolContract.json'
 import { formatReadableDateOnly, formatReadableTimeWithTimeZone } from '@/lib/dateFormatter'
 import Link from 'next/link'
+import factoryAbi from '../abis/PoolFactory.json'
 
 interface Token {
     _id: string;
     symbol: string;
     amount: number;
     proportion: number;
+    takeProfitPercentage: number;
+    stopLossAtTokenPrice: number;
+    initialTokenPriceInUSD: number;
 }
 
 interface Pool {
@@ -43,7 +47,7 @@ interface TokenAllocation {
     _id: string;
 }
 
-interface  Transaction {
+interface Transaction {
     _id: string;
     type: string;
     txHash: string;
@@ -57,6 +61,13 @@ interface  Transaction {
     __v: number;
 }
 
+
+const tokens: { [key: string]: string } = {
+    "SYX": "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud",
+    "SYY": "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq",
+    "SYZ": "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us"
+};
+
 export default function SinglePoolPage() {
 
     const router = useRouter()
@@ -66,6 +77,14 @@ export default function SinglePoolPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [singlePool, setSinglePool] = useState<Pool>()
     const [loading, setLoading] = useState<boolean>(false)
+    const [tokenPrices, setTokenPrices] = useState<number[]>([])
+
+    const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+    const tronWeb = new TronWeb({
+        fullHost: 'https://nile.trongrid.io',
+        privateKey
+    });
+
     const calculatePerformance = async (currentBalance: number, initialBalance: number) => {
         console.log("first value current balance", currentBalance)
         console.log("first value initialBalance", initialBalance)
@@ -95,7 +114,7 @@ export default function SinglePoolPage() {
             prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
         )
     }
-    const handleDepositFunds = () =>  {
+    const handleDepositFunds = () => {
         router.push("/pool/deposit-token/1")
         // console.log("Deposit more funds")
         // Implement deposit logic here
@@ -108,11 +127,6 @@ export default function SinglePoolPage() {
 
 
 
-    const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-    const tronWeb = new TronWeb({
-        fullHost: 'https://nile.trongrid.io',
-        privateKey
-    });
 
     async function getTokenBalanceInUSDtry(poolAddress: string) {
         try {
@@ -155,6 +169,7 @@ export default function SinglePoolPage() {
             const usdc = poolBalanceInUSD ? poolBalanceInUSD.totalValue / 10 ** 6 : 0
             const newData = { ...poolDataa, "poolBalanceInUSD": usdc, currentTokenProportion: poolBalanceInUSD?.tokenProportion, performance: poolPerformance }
             setSinglePool(newData);
+
             console.log('Fetched pools for user:', newData);
         } catch (error) {
             console.error('Error fetching user pools:', error);
@@ -164,9 +179,9 @@ export default function SinglePoolPage() {
         }
     }
 
-    
-    
-    async function fetchTxHistory(poolAddress: string){
+
+
+    async function fetchTxHistory(poolAddress: string) {
         setLoading(true)
         try {
             const response = await fetch(`/api/pools/transactions/get-pool-txs?poolId=${poolAddress}`);
@@ -177,14 +192,52 @@ export default function SinglePoolPage() {
             }
             setTransactions(data.transactions || []);
             console.log("Tx History: ", data.transactions);
-            
+
         } catch (error) {
             console.error('Error fetching transactions:', error);
         } finally {
             setLoading(false);
         }
     }
-    
+
+    const fetchTokenPrices = async (): Promise<void> => {
+        console.log("Entering into fetchTokenPrices ....");
+        const tokenArray = singlePool?.tokens;
+
+        // Ensure tokenArray exists before proceeding
+        if (!tokenArray) {
+            console.error("No tokens found in singlePool");
+            return;
+        }
+
+        const prices: number[] = [];
+
+        // Use for...of to handle async/await
+        for (const token of tokenArray) {
+            try {
+                const tokenAddress = tokens[token.symbol];
+
+                // Ensure tokenAddress exists in tokens mapping
+                if (!tokenAddress) {
+                    console.error(`No token address found for symbol: ${token.symbol}`);
+                    continue;
+                }
+
+                // Fetch the price from the factory contract
+                const factoryContractInstance = await tronWeb.contract(factoryAbi.abi, factoryAbi.contractAddress);
+                const priceRaw = await factoryContractInstance.getOnChainPrice(tokenAddress).call();
+                const price = parseInt(priceRaw, 10) / 10 ** 6; // Adjust the price scale as needed
+                prices.push(price);
+            } catch (error) {
+                console.error(`Error fetching price for ${token.symbol}:`, error);
+            }
+        }
+        console.log("Prices: ", prices);
+        // Set the token prices after fetching all
+        setTokenPrices(prices);
+    };
+
+
     useEffect(() => {
         if (params.id) {
             fetchUserPool(params.id as string)
@@ -192,14 +245,17 @@ export default function SinglePoolPage() {
         }
     }, [params.id])
 
+    useEffect(() => {
+        fetchTokenPrices();
+    }, [singlePool]);
+
     const renderPoolStatus = (tokens: TokenAllocation[], isAfter: boolean = false) => (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {tokens.map((token) => (
-                <div 
-                    key={token._id} 
-                    className={`flex flex-col items-center justify-center rounded-lg p-3 transition-all duration-300 border border-border ${
-                        isAfter ? 'bg-green-100 shadow-md' : 'bg-background'
-                    }`}
+                <div
+                    key={token._id}
+                    className={`flex flex-col items-center justify-center rounded-lg p-3 transition-all duration-300 border border-border ${isAfter ? 'bg-green-100 shadow-md' : 'bg-background'
+                        }`}
                 >
                     <span className="text-sm font-medium text-muted-foreground">
                         {token.tokenName}
@@ -439,7 +495,11 @@ export default function SinglePoolPage() {
                                                 </div>
                                                 <div className="flex justify-between text-sm text-gray-500">
                                                     <span>Initial Allocation: <span className='text-foreground'>{asset.proportion}%</span></span>
-                                                    <span>Initial Price: <span className='text-foreground'>$2</span></span>
+                                                    <div className='text-sm text-gray-500'> 
+                                                        <span>Current Price: <span className='text-foreground'>${tokenPrices[index]} </span></span>
+                                                        
+                                                        <span>Initial Price: <span className='text-foreground'>${asset.initialTokenPriceInUSD}</span></span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -454,91 +514,91 @@ export default function SinglePoolPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <Table>
-                                    <TableHeader className="hover:bg-transparent">
-                                        <TableRow>
-                                        <TableHead>Action</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Details</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {transactions.map((tx, index) => (
-                                        <React.Fragment key={index}>
-                                            <TableRow 
-                                            className="cursor-pointer hover:bg-secondary"
-                                            onClick={() => toggleRowExpansion(tx._id)}
-                                            >
-                                            <TableCell>
-                                                <div className="flex items-center space-x-2">
-                                                {getStatusIcon(tx.type)}
-                                                <span>{tx.type}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>25/09/2024</TableCell>
-                                            <TableCell>{tx.description}</TableCell>
-                                            <TableCell>
-                                                <Button variant="ghost" size="sm">
-                                                {expandedRows.includes(tx._id) ? (
-                                                    <ChevronUp className="h-4 w-4" />
-                                                ) : (
-                                                    <ChevronDown className="h-4 w-4" />
-                                                )}
-                                                </Button>
-                                            </TableCell>
-                                            </TableRow>
-                                            {expandedRows.includes(tx._id) && (
+                                        <TableHeader className="hover:bg-transparent">
                                             <TableRow>
-                                                <TableCell colSpan={4} className="bg-background border border-border p-4">
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    <div>
-                                                    <h5 className="font-semibold text-lg text-muted-foreground mb-4">
-                                                        Transaction Details:
-                                                    </h5>
-                                                    <div className="space-y-2">
-                                                        <p className="text-sm mb-1">
-                                                        <span className="font-medium text-muted-foreground">Type:</span> {tx.type}
-                                                        </p>
-                                                        <p className="text-sm mb-1">
-                                                        <span className="font-medium text-muted-foreground">Date:</span> {formatReadableDateOnly(tx.txDate)} {formatReadableTimeWithTimeZone(tx.txDate)}
-                                                        </p>
-                                                        <p className="text-sm mb-1">
-                                                        <span className="font-medium text-muted-foreground">Description:</span> {tx.description}
-                                                        </p>
-                                                    </div>
-                                                    </div>
-                                                    <div>
-                                                    <h4 className="font-semibold text-lg text-muted-foreground mb-4">Pool Status Change</h4>
-                                                    <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
-                                                        <div className="flex-1 w-full">
-                                                        <h5 className="text-sm font-medium mb-3 text-muted-foreground">Before:</h5>
-                                                        {renderPoolStatus(tx.tokenBefore)}
-                                                        </div>
-                                                        <ArrowRight className="h-8 w-8 text-gray-400 transform rotate-90 md:rotate-0" />
-                                                        <div className="flex-1 w-full">
-                                                        <h5 className="text-sm font-medium mb-3 text-muted-foreground">After:</h5>
-                                                        {renderPoolStatus(tx.tokenAfter, true)}
-                                                        </div>
-                                                    </div>
-                                                    </div>
-                                                </div>
-                                                <a
-                                                    href={`https://tronscan.org/#/transaction/${tx.txHash}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="mt-6 text-sm text-white max-w-max px-4 py-3 rounded-lg bg-accent hover:text-blue-600 transition-colors duration-200 flex items-center"
-                                                >
-                                                    View Transaction <ExternalLink className="h-4 w-4 ml-1" />
-                                                </a>
-                                                </TableCell>
+                                                <TableHead>Action</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead>Details</TableHead>
                                             </TableRow>
-                                            )}
-                                        </React.Fragment>
-                                        ))}
-                                    </TableBody>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {transactions.map((tx, index) => (
+                                                <React.Fragment key={index}>
+                                                    <TableRow
+                                                        className="cursor-pointer hover:bg-secondary"
+                                                        onClick={() => toggleRowExpansion(tx._id)}
+                                                    >
+                                                        <TableCell>
+                                                            <div className="flex items-center space-x-2">
+                                                                {getStatusIcon(tx.type)}
+                                                                <span>{tx.type}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>25/09/2024</TableCell>
+                                                        <TableCell>{tx.description}</TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" size="sm">
+                                                                {expandedRows.includes(tx._id) ? (
+                                                                    <ChevronUp className="h-4 w-4" />
+                                                                ) : (
+                                                                    <ChevronDown className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {expandedRows.includes(tx._id) && (
+                                                        <TableRow>
+                                                            <TableCell colSpan={4} className="bg-background border border-border p-4">
+                                                                <div className="grid grid-cols-1 gap-4">
+                                                                    <div>
+                                                                        <h5 className="font-semibold text-lg text-muted-foreground mb-4">
+                                                                            Transaction Details:
+                                                                        </h5>
+                                                                        <div className="space-y-2">
+                                                                            <p className="text-sm mb-1">
+                                                                                <span className="font-medium text-muted-foreground">Type:</span> {tx.type}
+                                                                            </p>
+                                                                            <p className="text-sm mb-1">
+                                                                                <span className="font-medium text-muted-foreground">Date:</span> {formatReadableDateOnly(tx.txDate)} {formatReadableTimeWithTimeZone(tx.txDate)}
+                                                                            </p>
+                                                                            <p className="text-sm mb-1">
+                                                                                <span className="font-medium text-muted-foreground">Description:</span> {tx.description}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-lg text-muted-foreground mb-4">Pool Status Change</h4>
+                                                                        <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
+                                                                            <div className="flex-1 w-full">
+                                                                                <h5 className="text-sm font-medium mb-3 text-muted-foreground">Before:</h5>
+                                                                                {renderPoolStatus(tx.tokenBefore)}
+                                                                            </div>
+                                                                            <ArrowRight className="h-8 w-8 text-gray-400 transform rotate-90 md:rotate-0" />
+                                                                            <div className="flex-1 w-full">
+                                                                                <h5 className="text-sm font-medium mb-3 text-muted-foreground">After:</h5>
+                                                                                {renderPoolStatus(tx.tokenAfter, true)}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <a
+                                                                    href={`https://tronscan.org/#/transaction/${tx.txHash}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="mt-6 text-sm text-white max-w-max px-4 py-3 rounded-lg bg-accent hover:text-blue-600 transition-colors duration-200 flex items-center"
+                                                                >
+                                                                    View Transaction <ExternalLink className="h-4 w-4 ml-1" />
+                                                                </a>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </TableBody>
                                     </Table>
                                 </CardContent>
-                                </Card>
+                            </Card>
                             {/* <Card className="bg-card shadow-lg rounded-lg overflow-hidden">
                                 <CardHeader>
                                     <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
