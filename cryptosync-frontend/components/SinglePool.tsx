@@ -500,7 +500,7 @@ export default function SinglePoolPage() {
                                                         <span className="font-medium text-muted-foreground">Type:</span> {tx.type}
                                                         </p>
                                                         <p className="text-sm mb-1">
-                                                        <span className="font-medium text-muted-foreground">Date:</span> {tx.txDate}
+                                                        <span className="font-medium text-muted-foreground">Date:</span> {formatReadableDateOnly(tx.txDate)} {formatReadableTimeWithTimeZone(tx.txDate)}
                                                         </p>
                                                         <p className="text-sm mb-1">
                                                         <span className="font-medium text-muted-foreground">Description:</span> {tx.description}
