@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { parseEther, formatEther } from 'viem';
 import abi from "../abis/Token.json";
 // import { TronLinkAdapter } from '@tronweb3/tronwallet-adapters';
@@ -82,8 +82,7 @@ const Faucet: React.FC = () => {
     //         connectWallet()
     // }, [adapter, connectWallet])
 
-
-    const fetchBalance = useCallback(async (tokenKey: string) => {
+    const fetchBalance = async (tokenKey: string) => {
         console.log("fetchBalance")
         const token = tokens[tokenKey];
         try {
@@ -97,23 +96,39 @@ const Faucet: React.FC = () => {
             console.error(`Error fetching ${tokenKey} balance:`, error);
             return '0';
         }
-    }, [address, tronWeb]);
-
-    const fetchAllBalances = useCallback(async () => {
-        console.log("all balaces")
-        const newBalances: { [key: string]: string } = {};
-        for (const tokenKey of Object.keys(tokens)) {
-            newBalances[tokenKey] = await fetchBalance(tokenKey);
-        }
-        setBalances(newBalances);
-    }, [fetchBalance]);
+    };
 
     useEffect(() => {
+        const fetchBalance = async (tokenKey: string) => {
+            console.log("fetchBalance")
+            const token = tokens[tokenKey];
+            try {
+
+                const contract = await tronWeb.contract(abi.abi, token.address);
+                const balance = await contract.methods.balanceOf(address).call();
+                console.log(balance)
+                console.log(tronWeb.ready)
+                return formatEther(balance.toString());
+            } catch (error) {
+                console.error(`Error fetching ${tokenKey} balance:`, error);
+                return '0';
+            }
+        };
+
+        const fetchAllBalances = async () => {
+            console.log("all balances")
+            const newBalances: { [key: string]: string } = {};
+            for (const tokenKey of Object.keys(tokens)) {
+                newBalances[tokenKey] = await fetchBalance(tokenKey);
+            }
+            setBalances(newBalances);
+        };
+
         if (address) { console.log(address) }
-        if (address && tronWeb && tronWeb.ready) {
+        if (address && tronWeb) {
             fetchAllBalances();
         }
-    }, [address, fetchAllBalances, fetchBalance, tronWeb]);
+    }, [address, tronWeb]);
 
     const mintTokens = async (tokenKey: string) => {
         if (!address) {
