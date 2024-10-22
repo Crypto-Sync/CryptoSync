@@ -36,6 +36,7 @@ const Faucet: React.FC = () => {
 
     useEffect(() => {
         const initTronWeb = async () => {
+            console.log("tronweb instance creation function called")
             if (typeof window !== 'undefined' && window.tronWeb && window.tronWeb.ready) {
                 const tronInstance = window.tronWeb;
                 if (tronInstance?.defaultAddress?.base58) {
