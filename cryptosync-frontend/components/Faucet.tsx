@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { parseEther, formatEther } from 'viem';
 import abi from "../abis/Token.json";
 // import { TronLinkAdapter } from '@tronweb3/tronwallet-adapters';
-import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
+// import { useWallet } from '@tronweb3/tronwallet-adapter-react-hooks';
 
 const tokens: { [key: string]: { address: string; name: string } } = {
     SyncX: {
@@ -26,8 +26,8 @@ const Faucet: React.FC = () => {
     const [tronWeb, setTronWeb] = useState<any>(null);
     // const adapter = new TronLinkAdapter();
 
-    const { address } = useWallet();
-    // const [address, setAddress] = useState<string | null>()
+    // const { address } = useWallet();
+    const [address, setAddress] = useState<string | null>()
     const [status, setStatus] = useState<string | null>(null);
     const [balances, setBalances] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
@@ -40,7 +40,9 @@ const Faucet: React.FC = () => {
             if (typeof window !== 'undefined' && window.tronWeb) {
                 const tronInstance = window.tronWeb;
                 if (tronInstance?.defaultAddress?.base58) {
+                    const defaultAddress = tronInstance?.defaultAddress?.base58;
                     setTronWeb(tronInstance);
+                    setAddress(defaultAddress);
                 } else {
                     console.error('No default address found in TronLink.');
                 }
