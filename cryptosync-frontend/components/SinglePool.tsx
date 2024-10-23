@@ -144,7 +144,7 @@ export default function SinglePoolPage() {
         )
     }
 
-    const fetchTokenBalances = async () => {
+    const fetchTokenBalances = async (): Promise<{ tokenAddresses: string[], tokenBalances: number[] } | undefined> => {
         const tokenArray = singlePool?.tokens;
         // Ensure tokenArray exists before proceeding
         if (!tokenArray) {
