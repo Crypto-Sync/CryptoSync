@@ -1,16 +1,17 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight, ChevronLeft } from 'lucide-react'
+import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight, ChevronLeft, TriangleAlert, LucidePauseCircle, Circle, Clock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import * as Progress from "@radix-ui/react-progress"
 import { Button } from "@/components/ui/button"
 import { useParams, useRouter } from 'next/navigation'
-import { TronWeb } from "tronweb"
+import { BigNumber, TronWeb } from "tronweb"
 import { abi } from '@/abis/PoolContract.json'
 import { formatReadableDateOnly, formatReadableTimeWithTimeZone } from '@/lib/dateFormatter'
 import Link from 'next/link'
 import factoryAbi from '../abis/PoolFactory.json'
+import tokenAbi from "../abis/Token.json";
 
 interface Token {
     _id: string;
@@ -65,7 +66,8 @@ interface Transaction {
 const tokens: { [key: string]: string } = {
     "SYX": "TWYiT6zVWEH8gkp14YSPTyTjt8MXNbvVud",
     "SYY": "TUQJvMCiPfaYLDyQg8cKkK64JSkUVZh4qq",
-    "SYZ": "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us"
+    "SYZ": "TRjfuFK3hZvx2nDhNM1khy1t15G8xb21Us",
+    "USDT": "TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf"
 };
 
 export default function SinglePoolPage() {
@@ -77,10 +79,37 @@ export default function SinglePoolPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [singlePool, setSinglePool] = useState<Pool>()
     const [loading, setLoading] = useState<boolean>(false)
+    const [emergencyLoading, setEmergencyLoading] = useState<boolean>(false)
     const [tokenPrices, setTokenPrices] = useState<number[]>([])
+    const [userAddress, setUserAddress] = useState<string | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [tronWeb, setTronWeb] = useState<any>(null);
+
+    useEffect(() => {
+        const initTronWeb = async () => {
+            if (typeof window !== 'undefined' && window.tronWeb) {
+                const tronInstance = window.tronWeb;
+
+                // Check if defaultAddress and base58 exist
+                const defaultAddress = tronInstance?.defaultAddress?.base58;
+
+                if (defaultAddress) {
+                    console.log("tronnnnn", tronInstance)
+                    setTronWeb(tronInstance);
+                    setUserAddress(defaultAddress);
+                } else {
+                    console.error('No default address found in TronLink.');
+                }
+            } else {
+                console.error('TronLink is not installed or not logged in.');
+            }
+        };
+
+        initTronWeb();
+    }, []);
 
     const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-    const tronWeb = new TronWeb({
+    const tronWebGetter = new TronWeb({
         fullHost: 'https://nile.trongrid.io',
         privateKey
     });
@@ -105,7 +134,7 @@ export default function SinglePoolPage() {
             case 'modify':
                 return <BarChart2 className="h-4 w-4 text-orange-500" />
             default:
-                return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                return <Clock className="h-4 w-4 text-yellow-500" />
         }
     }
 
@@ -114,6 +143,74 @@ export default function SinglePoolPage() {
             prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
         )
     }
+
+    const fetchTokenBalances = async () => {
+        const tokenArray = singlePool?.tokens;
+        // Ensure tokenArray exists before proceeding
+        if (!tokenArray) {
+            console.error("No tokens found in singlePool");
+            return;
+        }
+        const tokenAddresses = []
+        const tokenBalances = []
+
+        for (const token of tokenArray) {
+            const tokenAddress = tokens[token.symbol];
+            tokenAddresses.push(tokenAddress);
+            // Ensure tokenAddress exists in tokens mapping
+            if (!tokenAddress) {
+                console.error(`No token address found for symbol: ${token.symbol}`);
+                continue;
+            }
+            try {
+                const contract = await tronWebGetter.contract(tokenAbi.abi, tokenAddress);
+                const balance = await contract.methods.balanceOf(singlePool.poolAddress).call();
+
+                tokenBalances.push(Number(balance));
+            } catch (error) {
+                console.error(`Error fetching Balance for ${token.symbol}:`, error);
+            }
+        }
+
+        // for USDT
+        try {
+            const contract = await tronWebGetter.contract(tokenAbi.abi, tokens["USDT"]);
+            const balance = await contract.methods.balanceOf(singlePool.poolAddress).call();
+            tokenBalances.push(Number(balance));
+
+        } catch (error) {
+            console.error(`Error fetching Balance for USDT:`, error);
+        }
+
+        tokenAddresses.push(tokens["USDT"]);
+
+        return { tokenAddresses, tokenBalances };
+    }
+
+    const emergencyWithdraw = async () => {
+        setEmergencyLoading(true);
+        try {
+            const poolContract = await tronWeb.contract(abi, singlePool?.poolAddress);
+            const params = await fetchTokenBalances();
+            console.log("Params : ", params);
+            console.log("Withdrawing Tokens ...");
+            const withdraw = await poolContract.withdrawTokens(params?.tokenAddresses, [1, 1, 0]).send({
+                feeLimit: 100 * 1e6,
+                callValue: 0,
+                from: userAddress
+            });
+            console.log("Token Withdrawal Successful : ", withdraw);
+        }
+        catch (error) {
+            console.log("error Withdrawing Tokens: ", error);
+            if (error) {
+                return;
+            }
+        } finally {
+            setEmergencyLoading(false)
+        }
+    }
+
     const handleDepositFunds = () => {
         router.push("/pool/deposit-token/1")
         // console.log("Deposit more funds")
@@ -130,10 +227,8 @@ export default function SinglePoolPage() {
 
     async function getTokenBalanceInUSDtry(poolAddress: string) {
         try {
-
-
             // const PoolContract = await tronWeb.contract().at("TQ9CL6P84NuJ7AyFyWFnRcUDqyZxraScVd");
-            const PoolContract = await tronWeb.contract(abi, poolAddress);
+            const PoolContract = await tronWebGetter.contract(abi, poolAddress);
 
             const result = await PoolContract.getTokenBalanceInUSD().call();
             console.log("result from token contract", result)
@@ -141,7 +236,7 @@ export default function SinglePoolPage() {
             const totalValueInUSD = result.totalValueInUSD;
             const valueProportions = result.valueProportions;
 
-            return { totalValue: tronWeb.toDecimal(totalValueInUSD), tokenProportion: valueProportions };
+            return { totalValue: parseInt(totalValueInUSD, 10), tokenProportion: valueProportions };
 
             // console.log(`Is ${address} an operator?`, result);
         } catch (error) {
@@ -395,6 +490,18 @@ export default function SinglePoolPage() {
                                     <p className="text-muted-foreground">Created on {formatReadableDateOnly(singlePool.createdAt)}</p>
                                 </div>
                                 <div className="flex space-x-4 mt-4 md:mt-0">
+                                    <Button
+                                        onClick={emergencyWithdraw}
+                                        className="bg-red-500 hover:bg-red-600"
+                                        disabled={emergencyLoading}>
+                                        {emergencyLoading ? ( 
+                                            <> <span className="spinner-border spinner-border-sm mr-2"></span> {/* Spinner for loading */} Processing... </>
+                                        ) : (
+                                            <>
+                                                <TriangleAlert className="mr-2 h-4 w-4" /> Emergency Withdrawal
+                                            </>
+                                        )}
+                                    </Button>
                                     <Button onClick={handleDepositFunds} className="bg-green-500 hover:bg-green-600" disabled>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Deposit More Funds
                                     </Button>
@@ -412,7 +519,7 @@ export default function SinglePoolPage() {
                                     <CardContent className="pt-6">
                                         <div className="text-3xl font-bold">${singlePool.poolBalanceInUSD}</div>
                                         <p className="text-sm text-gray-400">
-                                            Initial Balance: ${(singlePool.totalValue).toLocaleString()}
+                                            Invested: ${(singlePool.totalValue).toLocaleString()}
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -495,9 +602,9 @@ export default function SinglePoolPage() {
                                                 </div>
                                                 <div className="flex justify-between text-sm text-gray-500">
                                                     <span>Initial Allocation: <span className='text-foreground'>{asset.proportion}%</span></span>
-                                                    <div className='text-sm text-gray-500'> 
+                                                    <div className='text-sm text-gray-500'>
                                                         <span>Current Price: <span className='text-foreground'>${tokenPrices[index]} </span></span>
-                                                        
+
                                                         <span>Initial Price: <span className='text-foreground'>${asset.initialTokenPriceInUSD}</span></span>
                                                     </div>
                                                 </div>
