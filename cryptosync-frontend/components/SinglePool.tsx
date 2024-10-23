@@ -1,12 +1,12 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, AlertTriangle, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight, ChevronLeft, TriangleAlert, LucidePauseCircle, Circle, Clock } from 'lucide-react'
+import { ArrowUpRight, TrendingUp, TrendingDown, BarChart2, RefreshCcw, ChevronDown, ChevronUp, ExternalLink, PlusCircle, Settings, ArrowRight, ChevronLeft, TriangleAlert, Clock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import * as Progress from "@radix-ui/react-progress"
 import { Button } from "@/components/ui/button"
 import { useParams, useRouter } from 'next/navigation'
-import { BigNumber, TronWeb } from "tronweb"
+import { TronWeb } from "tronweb"
 import { abi } from '@/abis/PoolContract.json'
 import { formatReadableDateOnly, formatReadableTimeWithTimeZone } from '@/lib/dateFormatter'
 import Link from 'next/link'
@@ -123,18 +123,18 @@ export default function SinglePoolPage() {
 
     const getStatusIcon = (type: string) => {
         switch (type.toLowerCase()) {
-            case 'rebalance':
-                return <RefreshCcw className="h-4 w-4 text-blue-500" />
-            case 'take-profit':
-                return <TrendingUp className="h-4 w-4 text-green-500" />
-            case 'stop-loss':
-                return <TrendingDown className="h-4 w-4 text-red-500" />
-            case 'deposit':
-                return <ArrowUpRight className="h-4 w-4 text-purple-500" />
-            case 'modify':
-                return <BarChart2 className="h-4 w-4 text-orange-500" />
-            default:
-                return <Clock className="h-4 w-4 text-yellow-500" />
+        case 'rebalance':
+            return <RefreshCcw className="h-4 w-4 text-blue-500" />
+        case 'take-profit':
+            return <TrendingUp className="h-4 w-4 text-green-500" />
+        case 'stop-loss':
+            return <TrendingDown className="h-4 w-4 text-red-500" />
+        case 'deposit':
+            return <ArrowUpRight className="h-4 w-4 text-purple-500" />
+        case 'modify':
+            return <BarChart2 className="h-4 w-4 text-orange-500" />
+        default:
+            return <Clock className="h-4 w-4 text-yellow-500" />
         }
     }
 
@@ -494,7 +494,7 @@ export default function SinglePoolPage() {
                                         onClick={emergencyWithdraw}
                                         className="bg-red-500 hover:bg-red-600"
                                         disabled={emergencyLoading}>
-                                        {emergencyLoading ? ( 
+                                        {emergencyLoading ? (
                                             <> <span className="spinner-border spinner-border-sm mr-2"></span> {/* Spinner for loading */} Processing... </>
                                         ) : (
                                             <>
