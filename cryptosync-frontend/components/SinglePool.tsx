@@ -144,7 +144,7 @@ export default function SinglePoolPage() {
         )
     }
 
-    const fetchTokenBalances = async (): Promise<{ tokenAddresses: string[], tokenBalances: number[] } | undefined> => {
+    const fetchTokenBalances = async (): Promise<{ tokenAddresses: string[], tokenBalances: string[] } | undefined> => {
         const tokenArray = singlePool?.tokens;
         // Ensure tokenArray exists before proceeding
         if (!tokenArray) {
@@ -166,7 +166,7 @@ export default function SinglePoolPage() {
                 const contract = await tronWebGetter.contract(tokenAbi.abi, tokenAddress);
                 const balance = await contract.methods.balanceOf(singlePool.poolAddress).call();
 
-                tokenBalances.push(Number(balance));
+                tokenBalances.push(balance.toString());
             } catch (error) {
                 console.error(`Error fetching Balance for ${token.symbol}:`, error);
             }
@@ -176,7 +176,7 @@ export default function SinglePoolPage() {
         try {
             const contract = await tronWebGetter.contract(tokenAbi.abi, tokens["USDT"]);
             const balance = await contract.methods.balanceOf(singlePool.poolAddress).call();
-            tokenBalances.push(Number(balance));
+            tokenBalances.push(balance.toString());
 
         } catch (error) {
             console.error(`Error fetching Balance for USDT:`, error);
@@ -507,7 +507,7 @@ export default function SinglePoolPage() {
                                         )}
                                     </Button>
                                     <Button onClick={handleDepositFunds} className="bg-green-500 hover:bg-green-600" disabled>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Deposit More Funds
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Deposit More Funds 
                                     </Button>
                                     <Button onClick={handleModifyPool} disabled variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50">
                                         <Settings className="mr-2 h-4 w-4" /> Modify Pool
