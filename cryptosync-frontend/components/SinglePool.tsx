@@ -281,13 +281,17 @@ export default function SinglePoolPage() {
         try {
             const response = await fetch(`/api/pools/transactions/get-pool-txs?poolId=${poolAddress}`);
             const data = await response.json();
-
+ 
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to fetch pools');
             }
-            setTransactions(data.transactions || []);
+            // Prepend new transactions to the existing state
+            setTransactions(prevTransactions => [
+                ...(data.transactions || []),
+                ...prevTransactions
+            ]);
             console.log("Tx History: ", data.transactions);
-
+ 
         } catch (error) {
             console.error('Error fetching transactions:', error);
         } finally {
@@ -319,7 +323,7 @@ export default function SinglePoolPage() {
                 }
 
                 // Fetch the price from the factory contract
-                const factoryContractInstance = await tronWeb.contract(factoryAbi.abi, factoryAbi.contractAddress);
+                const factoryContractInstance = await tronWebGetter.contract(factoryAbi.abi, factoryAbi.contractAddress);
                 const priceRaw = await factoryContractInstance.getOnChainPrice(tokenAddress).call();
                 const price = parseInt(priceRaw, 10) / 10 ** 6; // Adjust the price scale as needed
                 prices.push(price);
@@ -642,7 +646,7 @@ export default function SinglePoolPage() {
                                                                 <span>{tx.type}</span>
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell>25/09/2024</TableCell>
+                                                        <TableCell>{formatReadableDateOnly(tx.txDate)}</TableCell>
                                                         <TableCell>{tx.description}</TableCell>
                                                         <TableCell>
                                                             <Button variant="ghost" size="sm">
