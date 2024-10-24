@@ -194,7 +194,7 @@ export default function SinglePoolPage() {
             const params = await fetchTokenBalances();
             console.log("Params : ", params);
             console.log("Withdrawing Tokens ...");
-            const withdraw = await poolContract.withdrawTokens(params?.tokenAddresses, [1, 1, 0]).send({
+            const withdraw = await poolContract.withdrawTokens(params?.tokenAddresses, params?.tokenBalances).send({
                 feeLimit: 100 * 1e6,
                 callValue: 0,
                 from: userAddress
