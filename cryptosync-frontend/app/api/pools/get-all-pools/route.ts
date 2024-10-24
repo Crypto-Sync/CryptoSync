@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"; // Import NextResponse from next/server
 import dbConnect from "@/lib/dbConnect"; // Import the database connection function
 import Pool from "@/models/Pool"; // Import the Pool model
-
+export const revalidate=0;
 export async function GET() {
   await dbConnect(); // Connect to the database
 

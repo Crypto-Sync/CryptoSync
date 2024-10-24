@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Transaction, { ITransaction } from "@/models/Transaction";
-
+export const revalidate=0;
 export async function GET(req: Request) {
   await dbConnect();
 
