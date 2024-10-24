@@ -285,11 +285,11 @@ export default function SinglePoolPage() {
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to fetch pools');
             }
-            // Prepend new transactions to the existing state
-            setTransactions(prevTransactions => [
-                ...(data.transactions || []),
-                ...prevTransactions
-            ]);
+            
+            // setTransactions(data.transactions || []);
+            // Reverse the order of transactions
+            const reversedTransactions = (data.transactions || []).reverse();
+            setTransactions(reversedTransactions);
             console.log("Tx History: ", data.transactions);
  
         } catch (error) {
